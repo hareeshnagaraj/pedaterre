@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { BlockRankList } from "@/components/BlockRankList";
-import { getCityStats } from "@/lib/publishedData";
+import { boroughName } from "@/lib/borough";
+import { getCityStats, getGhostStats } from "@/lib/publishedData";
 import { formatAssessedValue } from "@/lib/share/cardModel";
+import {
+  empireStateEquivalents,
+  formatSquareFeet,
+} from "@/lib/viz/ghost";
 
 export const dynamic = "force-static";
 
@@ -12,7 +17,14 @@ export const metadata: Metadata = {
 };
 
 export default async function TopBlocksPage() {
-  const stats = await getCityStats();
+  const [stats, ghostStats] = await Promise.all([
+    getCityStats(),
+    getGhostStats(),
+  ]);
+  const cityEmpireStates = empireStateEquivalents(
+    ghostStats.citywide.capacitySqft,
+    ghostStats.empireStateSqft,
+  );
 
   return (
     <main className="top-page">
@@ -48,6 +60,69 @@ export default async function TopBlocksPage() {
             </dd>
           </div>
         </dl>
+      </section>
+
+      <section
+        className="ghost-citywide"
+        aria-labelledby="ghost-citywide-title"
+      >
+        <header>
+          <p className="eyebrow">THE GHOST CITY</p>
+          <h2 id="ghost-citywide-title">
+            {formatSquareFeet(ghostStats.citywide.capacitySqft)} UNBUILT
+          </h2>
+          <p>
+            Equivalent to{" "}
+            {cityEmpireStates.toLocaleString("en-US", {
+              maximumFractionDigits: 0,
+            })}{" "}
+            Empire State Buildings by floor area. Capacity is not a
+            construction forecast.
+          </p>
+        </header>
+
+        <dl className="ghost-citywide-stats">
+          <div>
+            <dt>citywide unbuilt capacity</dt>
+            <dd>{formatSquareFeet(ghostStats.citywide.capacitySqft)}</dd>
+          </div>
+          <div>
+            <dt>Empire State equivalent</dt>
+            <dd>
+              {cityEmpireStates.toLocaleString("en-US", {
+                maximumFractionDigits: 1,
+              })}
+            </dd>
+          </div>
+          {ghostStats.manhattanResidentialCapacitySqft != null ? (
+            <div>
+              <dt>Manhattan · residential only</dt>
+              <dd>
+                {formatSquareFeet(
+                  ghostStats.manhattanResidentialCapacitySqft,
+                )}
+              </dd>
+            </div>
+          ) : null}
+        </dl>
+
+        <div className="ghost-rank">
+          <h3>Blocks with the most unbuilt capacity</h3>
+          <ol>
+            {ghostStats.top50.slice(0, 10).map((block) => (
+              <li key={`${block.b}-${block.k}`}>
+                <a href={`/b/${block.b}/${block.k}`}>
+                  <span>
+                    {boroughName(block.borough)} · Block {block.k}
+                  </span>
+                  <strong>{formatSquareFeet(block.capacitySqft)}</strong>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <p className="ghost-caveat">{ghostStats.caveat}</p>
       </section>
 
       <BlockRankList expectedCount={stats.nBlocks} />

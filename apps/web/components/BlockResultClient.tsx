@@ -18,6 +18,10 @@ import type { BlockPayload } from "@/lib/schema";
 import type { BlockPick } from "@/lib/publishedData";
 import { selectAddressedGroup } from "@/lib/selection";
 import { formatAssessedValue } from "@/lib/share/cardModel";
+import {
+  empireStateEquivalents,
+  formatSquareFeet,
+} from "@/lib/viz/ghost";
 import { BlockViz } from "./BlockViz";
 import { BlockLocator } from "./BlockLocator";
 import { SharePanel } from "./SharePanel";
@@ -31,6 +35,8 @@ interface BlockResultClientProps {
   boro: string;
   block: number;
   curatedLinks: BlockPick[];
+  ghostCaveat: string;
+  empireStateSqft: number;
 }
 
 function requestedLotFrom(value: string | null): number | null {
@@ -43,6 +49,8 @@ export function BlockResultClient({
   boro,
   block,
   curatedLinks,
+  ghostCaveat,
+  empireStateSqft,
 }: BlockResultClientProps) {
   const searchParams = useSearchParams();
   const lotValue = searchParams.get("lot");
@@ -125,6 +133,10 @@ export function BlockResultClient({
         ? `YOUR PROPERTY GROUP · ${addressedGroup.nLots.toLocaleString("en-US")} LOTS · ${formatAssessedValue(addressedGroup.v * 1_000_000)} COMBINED`
         : "YOUR LOT";
   const grouped = payload.nLots > payload.nGroups;
+  const empireStates =
+    payload.capacitySqft == null
+      ? 0
+      : empireStateEquivalents(payload.capacitySqft, empireStateSqft);
 
   return (
     <>
@@ -146,6 +158,20 @@ export function BlockResultClient({
             <dt>city rank</dt>
             <dd>#{payload.rank.toLocaleString("en-US")}</dd>
           </div>
+          {payload.capacitySqft != null ? (
+            <div className="capacity-stat">
+              <dt>unbuilt capacity</dt>
+              <dd>{formatSquareFeet(payload.capacitySqft)}</dd>
+              {empireStates >= 1 ? (
+                <small>
+                  {empireStates.toLocaleString("en-US", {
+                    maximumFractionDigits: 1,
+                  })}{" "}
+                  Empire State {empireStates >= 1.05 ? "Buildings" : "Building"}
+                </small>
+              ) : null}
+            </div>
+          ) : null}
         </dl>
         <p>
           {payload.nLots.toLocaleString("en-US")} tax{" "}
@@ -162,7 +188,7 @@ export function BlockResultClient({
           {groupLabel}
         </p>
       ) : null}
-      <BlockViz payload={payload} />
+      <BlockViz payload={payload} ghostCaveat={ghostCaveat} />
       <SharePanel
         payload={payload}
         requestedLot={
