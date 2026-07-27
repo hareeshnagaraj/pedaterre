@@ -9,11 +9,22 @@ register, restraint) and study `apps/web/app/top/page.tsx` and
 
 ## 1. Geometry ingest (new)
 
-`scripts/etl/download-pluto.sh`, modeled exactly on `download.sh`:
-pull NYC PLUTO (`64uk-42ks`, 858,602 rows) paged by `$order=:id`,
-`$select=borough,block,lot,latitude,longitude,lotarea`, 500k/page, into
-`data/raw/pluto-page-*.csv` + sha256 + meta. Borough arrives as a code
-(`MN|BX|BK|QN|SI`) — map to 1–5.
+**PLUTO IS ALREADY DOWNLOADED** — `data/raw/pluto-page-*.csv`, 858,602
+rows, via `scripts/etl/download-pluto.sh`. Do not re-download it. Borough
+arrives as a code (`MN|BX|BK|QN|SI`) — map to 1–5. Verified: 99.8% of rows
+carry coordinates, covering 28,790 of the 28,798 blocks.
+
+**This dispatch owns the whole PLUTO→block join**, because a second feature
+depends on it: in the same stage, also compute the unbuilt air-rights
+figures specified in `SPEC-ghost.md` §2 (per-block `builtSqft`,
+`capacitySqft`, `unknownLots`, `ghostRatio`, per-group `ghost` allocation,
+and `index/ghost-stats.json`), following that section's honesty rules
+exactly — including its hard rule that capacity is **never** converted into
+dollars. Its tests are part of this dispatch's acceptance. The Ghost City
+renderer is a separate job and is not your concern; you are producing the
+data it will read. Verified target for its test: citywide capacity is
+~8,696 million sqft (≈3,141 Empire States) and Manhattan residential-only
+is ~571M sqft.
 
 `scripts/etl/build.py` gains a geometry stage:
 - Aggregate PLUTO lots to blocks: centroid = mean of member lot lat/lon
