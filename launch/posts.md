@@ -11,7 +11,7 @@ invented. Attach the share-card PNG named with each post.
 > holdings over $50M.
 >
 > Every block in the city, drawn to scale from the DOF roll:
-> {URL}/b/1/1171
+> https://pedaterre.vercel.app/b/1/1171
 
 Card: `mn-1171.png` · Verified: MN 1171 = Waterline Square / Riverside
 Center development, 400 West 61st St. Runners-up if needed: 200 Park Ave
@@ -22,7 +22,7 @@ Center development, 400 West 61st St. Runners-up if needed: 200 Park Ave
 > 2,821 tax lots — 0.24% of the 1.16 million lots in NYC — carry 23.5%
 > of the city's $1.9 trillion in assessed market value.
 >
-> Look up any block: {URL}
+> Look up any block: https://pedaterre.vercel.app
 
 Card: citywide strip screenshot. Both numbers from city-stats.json;
 recomputed two independent ways in the ETL test suite.
@@ -33,7 +33,7 @@ recomputed two independent ways in the ETL test suite.
 > building's height is its DOF assessed value — and where it ranks
 > among all 28,798 NYC blocks.
 >
-> Assessed value, not Zestimates. Sources on the page. {URL}
+> Assessed value, not Zestimates. Sources on the page. https://pedaterre.vercel.app
 
 Card: `median-block.png` (a real $35M Staten Island block — most
 people's actual result, per the block-character design).
