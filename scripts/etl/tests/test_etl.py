@@ -44,6 +44,13 @@ def payload(rows):
     ).payload
 
 
+def write_pluto(path, rows):
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=build.PLUTO_REQUIRED_COLUMNS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def generated_payload(boro, block):
     path = (
         build.DEFAULT_OUTPUT_DIR
@@ -272,6 +279,99 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(rank_all, {(1, 1): 1, (1, 2): 1, (1, 3): 2, (1, 4): 3})
         self.assertEqual(rank_taxable, {(1, 1): 1, (1, 3): 2})
 
+    def test_pluto_geometry_capacity_and_unknown_far_rules(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "pluto-page-0.csv"
+            write_pluto(
+                path,
+                [
+                    {
+                        "borough": "MN",
+                        "block": "1",
+                        "lot": "1",
+                        "latitude": "40.7",
+                        "longitude": "-74.0",
+                        "lotarea": "100",
+                        "bldgarea": "50",
+                        "builtfar": "1",
+                        "residfar": "3",
+                        "commfar": "0",
+                        "facilfar": "2",
+                    },
+                    {
+                        "borough": "MN",
+                        "block": "1",
+                        "lot": "2",
+                        "latitude": "40.8",
+                        "longitude": "-73.9",
+                        "lotarea": "80",
+                        "bldgarea": "20",
+                        "builtfar": "1",
+                        "residfar": "",
+                        "commfar": "0",
+                        "facilfar": "0",
+                    },
+                    {
+                        "borough": "MN",
+                        "block": "1",
+                        "lot": "3",
+                        "latitude": "0",
+                        "longitude": "0",
+                        "lotarea": "0",
+                        "bldgarea": "10",
+                        "builtfar": "0",
+                        "residfar": "0",
+                        "commfar": "0",
+                        "facilfar": "0",
+                    },
+                ],
+            )
+            result = build.scan_pluto([path])
+            block = result.blocks[(1, 1)]
+            self.assertEqual(result.rows_read, 3)
+            self.assertEqual(block.latitude, 40.75)
+            self.assertEqual(block.longitude, -73.95)
+            self.assertEqual(block.land_area, 180)
+            self.assertEqual(block.built_sqft, 80)
+            self.assertEqual(block.capacity_sqft, 200)
+            self.assertEqual(block.unknown_lots, 1)
+            self.assertEqual(result.manhattan_residential_capacity_sqft, 200)
+
+    def test_air_rights_are_allocated_to_existing_groups_in_square_feet(self):
+        geometry = build.PlutoBlock(
+            land_area=100,
+            built_sqft=50,
+            capacity_sqft=200,
+            latitude_sum=40.7,
+            longitude_sum=-74.0,
+            coordinate_lots=1,
+            lot_capacity={1: 200},
+        )
+        result = build.build_block_payload(
+            [row()],
+            rank=1,
+            rank_taxable=1,
+            percentile=1.0,
+            extract_hash="deadbeef",
+            pluto_block=geometry,
+        ).payload
+        self.assertEqual(result["builtSqft"], 50)
+        self.assertEqual(result["capacitySqft"], 200)
+        self.assertEqual(result["lots"][0]["ghost"], 200)
+        self.assertNotIn("$", build.AIR_RIGHTS_CAVEAT)
+
+    def test_block_without_pluto_match_reports_unknown_not_zero(self):
+        result = payload([row()])
+        for key in (
+            "landArea",
+            "builtSqft",
+            "capacitySqft",
+            "unknownLots",
+            "ghostRatio",
+        ):
+            self.assertIsNone(result[key])
+        self.assertIsNone(result["lots"][0]["ghost"])
+
     def test_quip_templates_are_deterministic(self):
         large_whale = [
             build.Group(mv=50, n=1, max_raw_lot=0),
@@ -421,6 +521,62 @@ class ProductionTreeTests(unittest.TestCase):
             sum(city["boroughTotals"].values()), build.EXPECTED_TOTAL_MV
         )
         self.assertEqual(len(city["top25Taxable"]), 25)
+
+    def test_geometry_map_coverage_join_and_null_density(self):
+        with (
+            build.DEFAULT_OUTPUT_DIR / "index" / "block-map.json"
+        ).open(encoding="utf-8") as handle:
+            block_map = json.load(handle)
+        lengths = {len(column) for column in block_map.values()}
+        self.assertEqual(len(lengths), 1)
+        self.assertEqual(next(iter(lengths)), self.result.blocks_with_coordinates)
+        self.assertGreater(
+            self.result.blocks_with_coordinates / build.EXPECTED_BLOCKS,
+            0.95,
+        )
+        self.assertEqual(
+            self.result.blocks_with_coordinates
+            + self.result.blocks_without_coordinates,
+            build.EXPECTED_BLOCKS,
+        )
+        for land_area, density in zip(block_map["a"], block_map["d"]):
+            self.assertEqual(density is None, land_area == 0)
+        with (
+            build.DEFAULT_OUTPUT_DIR / "index" / "block-ranks.json"
+        ).open(encoding="utf-8") as handle:
+            rank_rows = json.load(handle)
+        self.assertEqual(
+            set(zip(block_map["b"], block_map["k"])),
+            {(row["b"], row["k"]) for row in rank_rows}
+            - {
+                key
+                for key in self.result.scan.blocks
+                if self.result.pluto.blocks[key].latitude is None
+            },
+        )
+
+    def test_air_rights_citywide_benchmarks_and_caveat(self):
+        with (
+            build.DEFAULT_OUTPUT_DIR / "index" / "ghost-stats.json"
+        ).open(encoding="utf-8") as handle:
+            ghost = json.load(handle)
+        self.assertAlmostEqual(
+            ghost["citywide"]["capacitySqft"],
+            8_696_000_000,
+            delta=8_696_000_000 * 0.02,
+        )
+        self.assertAlmostEqual(
+            self.result.pluto.manhattan_residential_capacity_sqft,
+            571_400_000,
+            delta=571_400_000 * 0.02,
+        )
+        self.assertGreater(ghost["citywide"]["unknownLots"], 0)
+        self.assertEqual(ghost["empireStateSqft"], build.EMPIRE_STATE_SQFT)
+        self.assertIn("simplified as-of-right", ghost["caveat"])
+        self.assertNotIn("$", json.dumps(ghost))
+        self.assertTrue(
+            all(row["capacitySqft"] >= 0 for row in ghost["top50"])
+        )
 
     def test_full_city_block_ranks_index(self):
         with (

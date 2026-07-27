@@ -25,7 +25,9 @@ const requestedSource =
 const sourceRoot = path.resolve(process.cwd(), requestedSource);
 const sourceBuckets = path.join(sourceRoot, "buckets");
 const sourceBlockRanks = path.join(sourceRoot, "index/block-ranks.json");
+const sourceBlockMap = path.join(sourceRoot, "index/block-map.json");
 const sourceCityStats = path.join(sourceRoot, "index/city-stats.json");
+const sourceGhostStats = path.join(sourceRoot, "index/ghost-stats.json");
 const sourceMeta = path.join(sourceRoot, "meta.json");
 const outputRoot = path.join(appRoot, "public/data");
 const outputBuckets = path.join(outputRoot, "buckets");
@@ -106,7 +108,9 @@ async function deriveBoroughPicks() {
 
 const bucketCount = await requireBuckets();
 await requireFile(sourceBlockRanks, "block-ranks.json");
+await requireFile(sourceBlockMap, "block-map.json");
 await requireFile(sourceCityStats, "city-stats.json");
+await requireFile(sourceGhostStats, "ghost-stats.json");
 await requireFile(sourceMeta, "meta.json");
 await mkdir(outputRoot, { recursive: true });
 await mkdir(outputBuckets, { recursive: true });
@@ -126,6 +130,12 @@ await cp(sourceCityStats, path.join(outputRoot, "city-stats.json"), {
   force: true,
 });
 await cp(sourceBlockRanks, path.join(outputRoot, "block-ranks.json"), {
+  force: true,
+});
+await cp(sourceBlockMap, path.join(outputRoot, "block-map.json"), {
+  force: true,
+});
+await cp(sourceGhostStats, path.join(outputRoot, "ghost-stats.json"), {
   force: true,
 });
 await cp(sourceMeta, path.join(outputRoot, "meta.json"), { force: true });
