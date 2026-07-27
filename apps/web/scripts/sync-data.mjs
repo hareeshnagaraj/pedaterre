@@ -24,6 +24,7 @@ const requestedSource =
   (localDataExists ? repositoryData : siblingCheckoutData);
 const sourceRoot = path.resolve(process.cwd(), requestedSource);
 const sourceBuckets = path.join(sourceRoot, "buckets");
+const sourceBlockRanks = path.join(sourceRoot, "index/block-ranks.json");
 const sourceCityStats = path.join(sourceRoot, "index/city-stats.json");
 const sourceMeta = path.join(sourceRoot, "meta.json");
 const outputRoot = path.join(appRoot, "public/data");
@@ -104,6 +105,7 @@ async function deriveBoroughPicks() {
 }
 
 const bucketCount = await requireBuckets();
+await requireFile(sourceBlockRanks, "block-ranks.json");
 await requireFile(sourceCityStats, "city-stats.json");
 await requireFile(sourceMeta, "meta.json");
 await mkdir(outputRoot, { recursive: true });
@@ -121,6 +123,9 @@ try {
   });
 }
 await cp(sourceCityStats, path.join(outputRoot, "city-stats.json"), {
+  force: true,
+});
+await cp(sourceBlockRanks, path.join(outputRoot, "block-ranks.json"), {
   force: true,
 });
 await cp(sourceMeta, path.join(outputRoot, "meta.json"), { force: true });

@@ -422,6 +422,41 @@ class ProductionTreeTests(unittest.TestCase):
         )
         self.assertEqual(len(city["top25Taxable"]), 25)
 
+    def test_full_city_block_ranks_index(self):
+        with (
+            build.DEFAULT_OUTPUT_DIR / "index" / "block-ranks.json"
+        ).open(encoding="utf-8") as handle:
+            rows = json.load(handle)
+
+        self.assertEqual(len(rows), build.EXPECTED_BLOCKS)
+        self.assertEqual(sum(row["m"] for row in rows), build.EXPECTED_TOTAL_MV)
+        self.assertTrue(
+            all(left["m"] >= right["m"] for left, right in zip(rows, rows[1:]))
+        )
+
+        bucket_keys = set()
+        for bucket_path in (
+            build.DEFAULT_OUTPUT_DIR / "buckets"
+        ).glob("*/*.json"):
+            boro = int(bucket_path.parent.name)
+            with bucket_path.open(encoding="utf-8") as handle:
+                bucket_keys.update(
+                    (boro, int(block)) for block in json.load(handle)
+                )
+
+        self.assertEqual(
+            {(row["b"], row["k"]) for row in rows},
+            bucket_keys,
+        )
+        self.assertTrue(
+            all(
+                {"b", "k", "m", "t", "c"}.issubset(row)
+                and set(row).issubset({"b", "k", "m", "t", "a", "c"})
+                for row in rows
+            )
+        )
+        self.assertTrue(all(len(row.get("a", "")) <= 28 for row in rows))
+
     def test_z_determinism(self):
         first = build.hash_tree(build.DEFAULT_OUTPUT_DIR)
         second_result = build.build_tree()

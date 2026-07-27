@@ -186,6 +186,7 @@ export function BlockResultClient({
           <a className="footer-lookup" href="/#lookup">
             LOOK UP YOUR BLOCK
           </a>
+          <a href="/top">Ranked list of every block</a>
           {curatedLinks.map((pick) => (
             <a
               href={`/b/${boroughNumber(pick.borough)}/${pick.block}`}
