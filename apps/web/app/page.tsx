@@ -107,6 +107,7 @@ export default async function Home() {
       </section>
 
       <footer className="landing-footer">
+        <a href="/map">Map of every located block</a>
         <a href="/top">Ranked list of every block</a>
       </footer>
     </main>

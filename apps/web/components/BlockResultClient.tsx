@@ -19,6 +19,7 @@ import type { BlockPick } from "@/lib/publishedData";
 import { selectAddressedGroup } from "@/lib/selection";
 import { formatAssessedValue } from "@/lib/share/cardModel";
 import { BlockViz } from "./BlockViz";
+import { BlockLocator } from "./BlockLocator";
 import { SharePanel } from "./SharePanel";
 
 type LoadState =
@@ -182,11 +183,31 @@ export function BlockResultClient({
             {payload.rollYear} final roll · extract {payload.extractHash}
           </p>
         </div>
+        <BlockLocator boro={boro} block={block} />
         <nav aria-label="More blocks">
           <a className="footer-lookup" href="/#lookup">
             LOOK UP YOUR BLOCK
           </a>
+          <a href="/map">City map</a>
           <a href="/top">Ranked list of every block</a>
+          {payload.largestLotBbl ? (
+            <a
+              href={`https://propertyinformationportal.nyc.gov/parcels/parcel/${payload.largestLotBbl}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              NYC Property Information Portal
+            </a>
+          ) : null}
+          {payload.latitude != null && payload.longitude != null ? (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${payload.latitude},${payload.longitude}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Street View
+            </a>
+          ) : null}
           {curatedLinks.map((pick) => (
             <a
               href={`/b/${boroughNumber(pick.borough)}/${pick.block}`}

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Lot } from "../lib/schema.ts";
-import { thermalRGB } from "../lib/viz/color.ts";
+import { thermalRampRGB, thermalRGB } from "../lib/viz/color.ts";
 import { hScale, project, recomputeFit } from "../lib/viz/projection.ts";
 import { layoutTreemap } from "../lib/viz/treemap.ts";
 
@@ -93,4 +93,6 @@ test("tower height stays in screen pixels when the footprint fit changes", () =>
 test("low-value thermal cells stay on the cool indigo end of the ramp", () => {
   assert.equal(thermalRGB(0, 35).fill, "rgb(16,20,38)");
   assert.equal(thermalRGB(0.577, 35).fill, "rgb(32,73,112)");
+  assert.equal(thermalRampRGB(0).fill, "rgb(16,20,38)");
+  assert.equal(thermalRampRGB(1).fill, "rgb(220,108,40)");
 });
