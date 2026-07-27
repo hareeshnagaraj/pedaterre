@@ -1,4 +1,4 @@
-# taxlots — sources & claim verification
+# pedaterre — sources & claim verification
 
 ## Origin
 

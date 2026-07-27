@@ -1,4 +1,4 @@
-# taxlots
+# pedaterre
 
 **NYC tax block assessed value, visualized.**
 
@@ -6,7 +6,7 @@ Look up an address → see the tax block’s DOF-assessed market value, city ran
 
 ## Status
 
-- **Product name:** taxlots (locked)
+- **Product name:** pedaterre (locked)
 - **Design mock:** polished interactive HTML in `design/`
 - **Production app:** build from [`HANDOFF.md`](./HANDOFF.md) — one-shot execution plan for implementers
 
@@ -14,7 +14,7 @@ Look up an address → see the tax block’s DOF-assessed market value, city ran
 
 ```bash
 cd design
-# open block-worth-mock.html (to be renamed taxlots) in a browser
+# open block-worth-mock.html (to be renamed pedaterre) in a browser
 # or deploy design/ on Vercel
 ```
 

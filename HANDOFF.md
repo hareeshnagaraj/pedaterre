@@ -1,6 +1,6 @@
-# taxlots — ONE-SHOT EXECUTION HANDOFF
+# pedaterre — ONE-SHOT EXECUTION HANDOFF
 
-**Product name (locked):** `taxlots`  
+**Product name (locked):** `pedaterre`  
 **Workspace:** `/Users/hareeshnagaraj/Development/pedaterre`  
 **Audience of this doc:** an implementer (Claude / human) who will build production in **one continuous pass**.  
 **Do not re-ideate the product.** Execute from this handoff + the live design mock.  
@@ -10,7 +10,7 @@
 
 ## 0. Mission (read once, then build)
 
-Ship **taxlots**: look up a NYC address → see the **tax block’s assessed market value** (DOF), how the block ranks citywide, and two world-class interactive visualizations (isometric skyline + thermal treemap), plus a viral share card and honest sources/verification.
+Ship **pedaterre**: look up a NYC address → see the **tax block’s assessed market value** (DOF), how the block ranks citywide, and two world-class interactive visualizations (isometric skyline + thermal treemap), plus a viral share card and honest sources/verification.
 
 This is a **≤1-day hackathon product** that must feel **classy municipal data craft**, not AI slop and not sparkly fintech. Playful + data-nerd tone.
 
@@ -22,7 +22,7 @@ This is a **≤1-day hackathon product** that must feel **classy municipal data 
 
 | Lock | Decision |
 |------|----------|
-| Name | **taxlots** (lowercase product wordmark; never “Block Worth” in production UI) |
+| Name | **pedaterre** (lowercase product wordmark; never “Block Worth” or “taxlots” in production UI) |
 | Domain | TBD later — ship on free host (Vercel) first |
 | Core unit | **Borough + tax block** aggregate of lot market values; lot is the atom |
 | Value definition | **DOF assessed market value** only — never sale price, Zestimate, AVM, or “estimated worth” without the assessment label |
@@ -30,7 +30,7 @@ This is a **≤1-day hackathon product** that must feel **classy municipal data 
 | Chatbot | **None** |
 | Full GIS / parcel polygons | **Out of v1** (grid placement from block lot order / synthetic grid is fine; real footprints later optional) |
 | Datastore | Free/cheap: **static JSON + optional Turso/SQLite** hybrid later; no expensive managed DB for day-1 |
-| Design source of truth | `design/block-worth-mock.html` (rename to taxlots; keep visual system) |
+| Design source of truth | `design/block-worth-mock.html` (rename to pedaterre; keep visual system) |
 | Brand tone | Utilitarian municipal + dry humor; **cannot be corny** |
 | AI attribution | **Zero** in commits, PRs, code comments, README footers, deploy notes, or any user-visible surface |
 
@@ -122,10 +122,10 @@ Use these as **UX regression fixtures** even after real data ships (keep a “de
    - Hover + pin for lot details  
 
 3. **Share card**  
-   - Brand wordmark **taxlots** (replace “Block Worth”)  
+   - Brand wordmark **pedaterre** (replace “Block Worth”)  
    - Where / subline / dollars / rank / quip  
    - Stats: Your lot · Tallest lot · City rank · Whale share  
-   - Stamp id e.g. `TL-MN-1398-FY27`  
+   - Stamp id e.g. `PD-MN-1398-FY27`  
    - Source line: DOF assessed market value · not sale/Zestimate · link nyc.gov/finance  
    - Actions: copy share link · copy image (html2canvas or canvas export of card)  
 
@@ -182,13 +182,13 @@ Search-replace across UI and docs:
 
 | Old | New |
 |-----|-----|
-| Block Worth | taxlots |
-| Block Worth · | taxlots · |
-| `BW-MN-` stamp prefix | `TL-MN-` (etc.) |
-| block-worth-mock.html | `taxlots-mock.html` or promote into app route |
+| Block Worth | pedaterre |
+| Block Worth · | pedaterre · |
+| `BW-MN-` stamp prefix | `PD-MN-` (etc.) |
+| block-worth-mock.html | `pedaterre-mock.html` or promote into app route |
 | “Their share” land tease | keep or tighten; avoid corny slogans |
 
-Wordmark style on card: `taxlots` with optional red accent on a letter/span if it reads clean (mock used `Block <span>Worth</span>` with stamp color on second word — adapt without corniness; utilitarian `taxlots` alone is fine).
+Wordmark style on card: `pedaterre` lowercase, clean. Optional red accent on a letter/span if it reads clean (mock used `Block <span>Worth</span>` with stamp color on second word — don’t force a split if it feels corny).
 
 ---
 
@@ -345,8 +345,8 @@ If fully static: no geocode proxy; client hits GeoSearch directly if CORS allows
 ### 6.5 Share links
 
 ```
-https://taxlots.vercel.app/b/1/1398?lot=21
-https://taxlots.vercel.app/?demo=midtown   # fixtures
+https://pedaterre.vercel.app/b/1/1398?lot=21
+https://pedaterre.vercel.app/?demo=midtown   # fixtures
 ```
 
 OG tags optional day-1; copy link + card image is enough for virality.
@@ -402,7 +402,7 @@ Mock used `?iter=1..20` feature flags. Production can delete flags and ship fina
 - Quips should be one sentence, observational, non-corny  
   - Good: *One tower is 62% of the block’s assessed value.*  
   - Bad: *Your block is RICH AF 🔥🔥* / *Net worth glow up*  
-- Name **taxlots** is utilitarian on purpose — don’t add a cutesy tagline that undermines it  
+- Name **pedaterre** is locked (distinctive, not “Block Worth” corn). Don’t bolt on a cutesy tagline that undermines it  
 - Sources section is part of the product, not a legal footer afterthought  
 
 ---
@@ -453,7 +453,7 @@ Execute end-to-end without waiting for re-confirmation of product decisions. Shi
 3. Global CSS tokens from §4.1; load Libre Franklin + Barlow Condensed.  
 4. Global rename: no “Block Worth” strings in app UI.  
 5. Port landing + result layout structure from mock (HTML structure first).  
-6. Commit: `scaffold taxlots app shell and design tokens`.  
+6. Commit: `scaffold pedaterre app shell and design tokens`.  
 
 ### Phase B — Viz port (2–4 hr) — **do not skip quality**
 
@@ -487,7 +487,7 @@ Execute end-to-end without waiting for re-confirmation of product decisions. Shi
 1. LIVE badge when data is real; DEMO only on fixtures.  
 2. Footer: roll year, hash, assessment disclaimer, DOF link.  
 3. PIP links per lot.  
-4. Deploy Vercel project **taxlots** (new project; don’t reuse design-lab naming for prod).  
+4. Deploy Vercel project **pedaterre** (new project; don’t reuse design-lab naming for prod).  
 5. README with run instructions + data refresh.  
 6. Commit: `ship live data badges and deploy config`.  
 
@@ -495,7 +495,7 @@ Execute end-to-end without waiting for re-confirmation of product decisions. Shi
 
 1. First-load journey: land → demo or search → skyline → thermal → copy share.  
 2. Mobile: card stacks, canvas height usable, tabs tappable.  
-3. Meta title/description: utilitarian (`taxlots — NYC tax block assessed value`).  
+3. Meta title/description: utilitarian (`pedaterre — NYC tax block assessed value`).  
 4. Optional: simple OG image later — not a blocker.  
 
 ---
@@ -506,7 +506,7 @@ Ship only when **all** are true:
 
 | # | Criterion |
 |---|-----------|
-| 1 | Product name **taxlots** everywhere user-facing; zero “Block Worth” |
+| 1 | Product name **pedaterre** everywhere user-facing; zero “Block Worth” |
 | 2 | Skyline + thermal both work for demo + at least one real ingested block |
 | 3 | Heights/area use **assessed market value**; disclaimer visible |
 | 4 | Share card copy link works; card looks screenshot-worthy |
@@ -530,7 +530,7 @@ These were fixed through many polish rounds — treat as **requirements**:
 2. **Skyline off-frame** was fixed with full-height 8-corner AABB fit + padding + optical pan — not by shrinking towers arbitrarily.  
 3. User feedback preferred **classy restraint** over particle/bloom spectacle.  
 4. Sources/verification are part of trust for a viral data product — keep them prominent.  
-5. Naming: “Block Worth” was rejected as corny; **taxlots** is locked.  
+5. Naming: “Block Worth” was rejected as corny; “taxlots” was interim; **pedaterre** is locked.  
 
 ---
 
@@ -538,7 +538,7 @@ These were fixed through many polish rounds — treat as **requirements**:
 
 - Imperative, short, no AI trailers  
 - Examples:  
-  - `init taxlots repo with design mock and handoff`  
+  - `init pedaterre repo with design mock and handoff`  
   - `port block viz modules from design mock`  
   - `etl: aggregate nyc dof assessment roll by block`  
 
@@ -583,4 +583,4 @@ design/index.html                   ← iteration gallery (reference only)
 
 ---
 
-*End of handoff. Build taxlots.*
+*End of handoff. Build pedaterre.*
