@@ -768,3 +768,14 @@ voice caught); no contingency hour exists.
 **ROUND 1 CLOSED.** Build begins: foundations (schema + golden payloads,
 this session) → SPEC-etl + SPEC-viz-a + SPEC-viz-b → parallel codex
 dispatch → round 2 spec-spar in parallel.
+
+---
+
+# Round 2 — /spar on the specs (mid-build) — reconciliation
+
+| Grok finding | Verdict | Action |
+|--------------|---------|--------|
+| No spec wires real data into the app; all gates pass while prod renders fixtures + 404 OG | **ADOPTED** (sharpest) | SPEC-address.md written NOW: owns data publication (`data/generated/buckets` → `apps/web/public/data/buckets`), the production `/b/[boro]/[block]` route + fetch + states, you-resolution. G4 vertical slice cannot pass without it |
+| `output:'export'` incompatible with the OG edge route; config ownership unassigned | **ADOPTED** | Explicit: standard Next.js build on Vercel (static-generated pages + ONE edge function). PLAN's "static export" line superseded. Verified at WS1a diff review |
+| drawSkylineThumb contract signed only by WS1b | **ADOPTED** | Signature pinned by WS1b's param type; `lib/share/thumbAdapter.ts` assigned to integration (this session), single binding point |
+| D-2 "ONE renderer" vs canvas card + SVG OG mirror | **ADOPTED w/ modification** | D-2 refined: ONE layout contract (`cardLayout.ts` — geometry, strings, truncation) consumed by BOTH backends; edge runtime cannot run canvas, so backends differ, structure cannot. Reference PNGs re-rendered with the real thumb at integration and re-reviewed |
