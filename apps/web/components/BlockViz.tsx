@@ -6,6 +6,12 @@ import { boroughName } from "@/lib/borough";
 import { CANVAS_COLORS, TOKENS } from "@/lib/tokens";
 import { thermalRGB } from "@/lib/viz/color";
 import {
+  builtHeight,
+  ghostHeight,
+  hasGhostMassing,
+  permittedHeight,
+} from "@/lib/viz/ghost";
+import {
   computeOrigin,
   hScale,
   project as projectPoint,
@@ -151,28 +157,49 @@ function EmptyBlockViz({
 interface BlockVizProps {
   payload: BlockPayload;
   blind?: boolean;
+  ghostCaveat?: string;
 }
 
-export function BlockViz({ payload, blind = false }: BlockVizProps) {
-  if (payload.totalMv === 0) {
+export function BlockViz({
+  payload,
+  blind = false,
+  ghostCaveat,
+}: BlockVizProps) {
+  const ghostEnabled =
+    !blind && Boolean(ghostCaveat) && hasGhostMassing(payload);
+  if (payload.totalMv === 0 && !ghostEnabled) {
     return <EmptyBlockViz blind={blind} payload={payload} />;
   }
-  return <CanvasBlockViz payload={payload} blind={blind} />;
+  return (
+    <CanvasBlockViz
+      payload={payload}
+      blind={blind}
+      ghostCaveat={ghostCaveat}
+      ghostEnabled={ghostEnabled}
+    />
+  );
 }
 
 function CanvasBlockViz({
   payload,
   blind,
+  ghostCaveat,
+  ghostEnabled,
 }: {
   payload: BlockPayload;
   blind: boolean;
+  ghostCaveat?: string;
+  ghostEnabled: boolean;
 }) {
   const shellRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const emptyOverlayRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const isoButtonRef = useRef<HTMLButtonElement>(null);
   const thermalButtonRef = useRef<HTMLButtonElement>(null);
+  const builtButtonRef = useRef<HTMLButtonElement>(null);
+  const permittedButtonRef = useRef<HTMLButtonElement>(null);
   const hudHintRef = useRef<HTMLSpanElement>(null);
   const hudModeRef = useRef<HTMLSpanElement>(null);
   const metaRef = useRef<HTMLDivElement>(null);
@@ -181,9 +208,12 @@ function CanvasBlockViz({
     const shell = shellRef.current!;
     const panel = panelRef.current!;
     const canvas = canvasRef.current!;
+    const emptyOverlay = emptyOverlayRef.current;
     const title = titleRef.current!;
     const isoButton = isoButtonRef.current!;
     const thermalButton = thermalButtonRef.current!;
+    const builtButton = builtButtonRef.current;
+    const permittedButton = permittedButtonRef.current;
     const hudHint = hudHintRef.current!;
     const hudMode = hudModeRef.current!;
     const meta = metaRef.current!;
@@ -230,6 +260,8 @@ function CanvasBlockViz({
         pointerStartY: 0,
         rise: 1,
         thermalT: 1,
+        ghostT: 0,
+        ghostTarget: 0,
         idle: 0,
         raf: 0,
         cssH: 440,
@@ -279,12 +311,14 @@ function CanvasBlockViz({
     }
 
     function recomputeFit() {
+      const fitPermitted = ghostEnabled && state.ghostTarget === 1;
       const key = [
         payload.bblPrefix,
         payload.lots.length,
         canvas.clientWidth,
         state.cssH,
         state.userZoom.toFixed(4),
+        fitPermitted ? "permitted" : "built",
       ].join(":");
       if (key === state.fitKey) return;
       state.fit = computeFit(
@@ -294,6 +328,7 @@ function CanvasBlockViz({
         state.angle,
         state.tilt,
         state.userZoom,
+        fitPermitted ? permittedHeight : undefined,
       );
       state.fitKey = key;
     }
@@ -677,6 +712,56 @@ function CanvasBlockViz({
       }
     }
 
+    function drawGhost(lot: Lot, maxV: number) {
+      if (!ghostEnabled || state.ghostT <= 0.001) return;
+      const extraHeight = ghostHeight(lot.ghost) * state.ghostT;
+      if (extraHeight <= 0.01) return;
+
+      const base = 0.62;
+      const localRise = lotRise(lot.v, lot, maxV);
+      const z0 =
+        payload.totalMv === 0 ? 0 : builtHeight(lot) * localRise;
+      const z1 = z0 + extraHeight;
+      const corners = [
+        [lot.c, lot.r, z0],
+        [lot.c + base, lot.r, z0],
+        [lot.c + base, lot.r + base, z0],
+        [lot.c, lot.r + base, z0],
+        [lot.c, lot.r, z1],
+        [lot.c + base, lot.r, z1],
+        [lot.c + base, lot.r + base, z1],
+        [lot.c, lot.r + base, z1],
+      ].map(([x, y, z]) => project(x, y, z));
+
+      const face = (indices: number[], fill: string) => {
+        ctx.beginPath();
+        indices.forEach((index, pointIndex) => {
+          const point = corners[index];
+          if (pointIndex === 0) ctx.moveTo(point.x, point.y);
+          else ctx.lineTo(point.x, point.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+      };
+
+      ctx.save();
+      face([0, 1, 5, 4], "rgba(153,184,187,0.105)");
+      face([1, 2, 6, 5], "rgba(116,151,157,0.075)");
+      face([4, 5, 6, 7], "rgba(190,211,211,0.14)");
+
+      ctx.strokeStyle = "rgba(216,229,226,0.3)";
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(corners[4].x, corners[4].y);
+      ctx.lineTo(corners[5].x, corners[5].y);
+      ctx.lineTo(corners[6].x, corners[6].y);
+      ctx.lineTo(corners[7].x, corners[7].y);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    }
+
     function flushIsoLabels() {
       if (!state.isoLabelJobs.length) return;
       state.isoLabelJobs.sort((a, b) => b.priority - a.priority);
@@ -834,7 +919,7 @@ function CanvasBlockViz({
         ctx.fillRect(0, 0, w, h);
       }
 
-      const maxV = Math.max(...payload.lots.map((l) => l.v));
+      const maxV = Math.max(...payload.lots.map((l) => l.v)) || 1;
       const sorted = [...payload.lots].sort((a, b) => project(a.c, a.r, 0).depth - project(b.c, b.r, 0).depth);
 
       const minC = Math.min(...payload.lots.map((l) => l.c)) - 1;
@@ -952,7 +1037,10 @@ function CanvasBlockViz({
           blind && (l.you || l.club)
             ? { ...l, you: undefined, club: undefined }
             : l;
-        drawBuilding(l.c, l.r, l.v, renderLot, maxV, false);
+        if (payload.totalMv > 0) {
+          drawBuilding(l.c, l.r, l.v, renderLot, maxV, false);
+        }
+        drawGhost(renderLot, maxV);
         ctx.globalAlpha = 1;
       });
 
@@ -969,6 +1057,7 @@ function CanvasBlockViz({
       }
       shell.dataset.rendered = "true";
       shell.dataset.rise = state.rise.toFixed(3);
+      shell.dataset.ghostRise = state.ghostT.toFixed(3);
     }
 
     function roundRectPath(x: number, y: number, w: number, h: number, r: number) {
@@ -1006,6 +1095,14 @@ function CanvasBlockViz({
       const mapY = inset;
       const mapW = w - inset * 2;
       const mapH = h - inset * 2;
+
+      if (totalV <= 0) {
+        meta.textContent = "No assessed value · no value geometry to draw";
+        shell.dataset.rendered = "true";
+        shell.dataset.thermalReveal = "1.000";
+        shell.dataset.rise = "1";
+        return;
+      }
 
       // recessed map well — print craft, soft negative space (not chrome)
       {
@@ -1842,7 +1939,8 @@ function CanvasBlockViz({
         ((state.mode === "thermal" && state.thermalT < 1) ||
           (idleActive && state.mode === "iso") ||
           Math.abs(state.angVel) > 0.0004 ||
-          state.rise < 1);
+          state.rise < 1 ||
+          Math.abs(state.ghostTarget - state.ghostT) > 0.001);
       if (keep) {
         if (state.rise < 1) {
           // smooth ease-out settle — classy, not snappy bounce
@@ -1851,6 +1949,13 @@ function CanvasBlockViz({
         if (state.mode === "thermal" && state.thermalT < 1) {
           // staggered cells settle slightly slower for print-like reveal
           state.thermalT = Math.min(1, state.thermalT + (1 - state.thermalT) * 0.078 + 0.014);
+        }
+        if (Math.abs(state.ghostTarget - state.ghostT) > 0.001) {
+          const delta = state.ghostTarget - state.ghostT;
+          state.ghostT += delta * 0.2;
+          if (Math.abs(state.ghostTarget - state.ghostT) <= 0.001) {
+            state.ghostT = state.ghostTarget;
+          }
         }
         state.raf = requestAnimationFrame(frame);
       }
@@ -1881,6 +1986,40 @@ function CanvasBlockViz({
       requestDraw();
     }
 
+    function updateSkylineChrome() {
+      const permitted = state.ghostTarget === 1;
+      title.innerHTML =
+        payload.totalMv === 0 && !permitted
+          ? "No assessed value · <strong>empty character</strong>"
+          : permitted
+            ? "Skyline · <strong>solid = assessed value · glass = unbuilt capacity</strong>"
+            : "Skyline · <strong>height = assessed value</strong>";
+      hudHint.textContent = "Drag to orbit · scroll to zoom";
+      hudMode.textContent =
+        ghostEnabled && permitted ? "As permitted" : "Isometric";
+    }
+
+    function syncEmptyOverlay() {
+      if (!emptyOverlay) return;
+      emptyOverlay.hidden =
+        state.mode === "iso" && state.ghostTarget === 1;
+    }
+
+    function setPermitted(permitted: boolean) {
+      if (!ghostEnabled || !builtButton || !permittedButton) return;
+      state.ghostTarget = permitted ? 1 : 0;
+      if (state.reduceMotion) state.ghostT = state.ghostTarget;
+      state.fitKey = "";
+      recomputeFit();
+      builtButton.setAttribute("aria-pressed", String(!permitted));
+      permittedButton.setAttribute("aria-pressed", String(permitted));
+      shell.dataset.skyline = permitted ? "permitted" : "built";
+      updateSkylineChrome();
+      syncEmptyOverlay();
+      state.lastInteraction = performance.now();
+      requestDraw();
+    }
+
     function setVizMode(next: VizMode) {
       state.mode = next;
       const isThermal = next === "thermal";
@@ -1893,11 +2032,15 @@ function CanvasBlockViz({
       isoButton.tabIndex = isThermal ? -1 : 0;
       thermalButton.tabIndex = isThermal ? 0 : -1;
       panel.setAttribute("aria-labelledby", isThermal ? "mode-thermal" : "mode-iso");
-      title.innerHTML = isThermal
-        ? "Thermal · <strong>area = share of block value</strong>"
-        : "Skyline · <strong>height = assessed value</strong>";
-      hudHint.textContent = "Drag to orbit · scroll to zoom";
-      hudMode.textContent = "Isometric";
+      if (isThermal) {
+        title.innerHTML =
+          payload.totalMv === 0
+            ? "No assessed value · <strong>empty character</strong>"
+            : "Thermal · <strong>area = share of block value</strong>";
+      } else {
+        updateSkylineChrome();
+      }
+      syncEmptyOverlay();
       state.hoverCell = null;
       state.pinnedLot = null;
       state.angVel = 0;
@@ -2068,6 +2211,7 @@ function CanvasBlockViz({
       if (event.matches) {
         state.rise = 1;
         state.thermalT = 1;
+        state.ghostT = state.ghostTarget;
         state.angVel = 0;
       } else {
         state.lastInteraction = performance.now();
@@ -2092,6 +2236,12 @@ function CanvasBlockViz({
     thermalButton.addEventListener("click", () => setVizMode("thermal"), {
       signal,
     });
+    builtButton?.addEventListener("click", () => setPermitted(false), {
+      signal,
+    });
+    permittedButton?.addEventListener("click", () => setPermitted(true), {
+      signal,
+    });
     isoButton.addEventListener("keydown", handleTabKey, { signal });
     thermalButton.addEventListener("keydown", handleTabKey, { signal });
     media.addEventListener("change", handleMotionChange, { signal });
@@ -2111,6 +2261,8 @@ function CanvasBlockViz({
     intersectionObserver.observe(shell);
 
     shell.dataset.reducedMotion = String(state.reduceMotion);
+    shell.dataset.skyline = "built";
+    shell.dataset.ghostRise = "0.000";
     // Double-rAF is deliberate: the panel needs a real layout width before fitting.
     state.raf = requestAnimationFrame(() => {
       state.raf = requestAnimationFrame(() => {
@@ -2126,7 +2278,7 @@ function CanvasBlockViz({
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
     };
-  }, [blind, payload]);
+  }, [blind, ghostEnabled, payload]);
 
   return (
     <section
@@ -2139,35 +2291,58 @@ function CanvasBlockViz({
         <div className="viz-toolbar-title" ref={titleRef}>
           Skyline · <strong>height = assessed value</strong>
         </div>
-        <div
-          className="mode-switch"
-          role="tablist"
-          aria-label="Visualization mode"
-          hidden={blind}
-        >
-          <button
-            ref={isoButtonRef}
-            type="button"
-            id="mode-iso"
-            role="tab"
-            aria-controls="city-panel"
-            aria-selected="true"
-            aria-pressed="true"
+        <div className="viz-toolbar-controls">
+          <div
+            className="skyline-switch"
+            role="group"
+            aria-label="Skyline envelope"
+            hidden={!ghostEnabled}
           >
-            Skyline
-          </button>
-          <button
-            ref={thermalButtonRef}
-            type="button"
-            id="mode-thermal"
-            role="tab"
-            aria-controls="city-panel"
-            aria-selected="false"
-            aria-pressed="false"
-            tabIndex={-1}
+            <button
+              ref={builtButtonRef}
+              type="button"
+              aria-pressed="true"
+            >
+              As built
+            </button>
+            <button
+              ref={permittedButtonRef}
+              type="button"
+              aria-pressed="false"
+            >
+              As permitted
+            </button>
+          </div>
+          <div
+            className="mode-switch"
+            role="tablist"
+            aria-label="Visualization mode"
+            hidden={blind}
           >
-            Thermal
-          </button>
+            <button
+              ref={isoButtonRef}
+              type="button"
+              id="mode-iso"
+              role="tab"
+              aria-controls="city-panel"
+              aria-selected="true"
+              aria-pressed="true"
+            >
+              Skyline
+            </button>
+            <button
+              ref={thermalButtonRef}
+              type="button"
+              id="mode-thermal"
+              role="tab"
+              aria-controls="city-panel"
+              aria-selected="false"
+              aria-pressed="false"
+              tabIndex={-1}
+            >
+              Thermal
+            </button>
+          </div>
         </div>
       </div>
       <div
@@ -2189,7 +2364,23 @@ function CanvasBlockViz({
               : `Schematic value visualization of ${payload.borough} tax block ${payload.block}`
           }
         />
-        <div className="iso-hud" hidden={blind}>
+        {payload.totalMv === 0 ? (
+          <div
+            className="empty-character ghost-empty-overlay"
+            ref={emptyOverlayRef}
+          >
+            <div>
+              <div className="empty-character-mark" aria-hidden="true" />
+              <h2>No assessed value on this roll</h2>
+              <p>
+                The tax lot is present in the final roll, but its filed
+                assessed market value is zero. There is no value geometry to
+                draw.
+              </p>
+            </div>
+          </div>
+        ) : null}
+        <div className="iso-hud" hidden={blind || payload.totalMv === 0}>
           <span ref={hudHintRef}>Drag to orbit · scroll to zoom</span>
           <span ref={hudModeRef}>Isometric</span>
         </div>
@@ -2213,6 +2404,13 @@ function CanvasBlockViz({
         <div className="thermal-meta" ref={metaRef}>
           Area ∝ value · every group shown
         </div>
+      </div>
+      <div className="ghost-footer" hidden={!ghostEnabled}>
+        <div className="ghost-legend">
+          <i aria-hidden="true" />
+          <span>Translucent glass massing = unbuilt as-of-right capacity</span>
+        </div>
+        <p>{ghostCaveat}</p>
       </div>
     </section>
   );

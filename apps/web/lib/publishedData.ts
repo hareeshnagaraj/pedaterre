@@ -27,12 +27,40 @@ const cityStatsSchema = z.object({
 
 const boroughPicksSchema = z.record(blockPickSchema);
 
+const airRightsTotalsSchema = z.object({
+  builtSqft: z.number().int().nonnegative(),
+  capacitySqft: z.number().int().nonnegative(),
+  unknownLots: z.number().int().nonnegative(),
+  ghostRatio: z.number().min(0).max(1).nullable(),
+});
+
+const ghostBlockSchema = airRightsTotalsSchema.extend({
+  b: z.number().int().min(1).max(5),
+  borough: z.enum(["MN", "BX", "BK", "QN", "SI"]),
+  k: z.number().int().nonnegative(),
+});
+
+const ghostStatsSchema = z.object({
+  caveat: z.string().min(1),
+  empireStateSqft: z.number().int().positive(),
+  citywide: airRightsTotalsSchema,
+  boroughs: z.record(airRightsTotalsSchema),
+  top50: z.array(ghostBlockSchema).min(1),
+  manhattanResidentialCapacitySqft: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional(),
+});
+
 export type CityStats = z.infer<typeof cityStatsSchema>;
 export type BlockPick = z.infer<typeof blockPickSchema>;
+export type GhostStats = z.infer<typeof ghostStatsSchema>;
 
 const dataRoot = path.join(process.cwd(), "public/data");
 let cityStatsPromise: Promise<CityStats> | undefined;
 let boroughPicksPromise: Promise<Record<string, BlockPick>> | undefined;
+let ghostStatsPromise: Promise<GhostStats> | undefined;
 
 export function getCityStats(): Promise<CityStats> {
   cityStatsPromise ??= readFile(path.join(dataRoot, "city-stats.json"), "utf8")
@@ -49,6 +77,16 @@ export function getBoroughPicks(): Promise<Record<string, BlockPick>> {
     .then(JSON.parse)
     .then((value) => boroughPicksSchema.parse(value));
   return boroughPicksPromise;
+}
+
+export function getGhostStats(): Promise<GhostStats> {
+  ghostStatsPromise ??= readFile(
+    path.join(dataRoot, "ghost-stats.json"),
+    "utf8",
+  )
+    .then(JSON.parse)
+    .then((value) => ghostStatsSchema.parse(value));
+  return ghostStatsPromise;
 }
 
 export async function curatedResultLinks(

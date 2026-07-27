@@ -12,6 +12,7 @@ import {
   curatedBlockRouteParams,
   curatedResultLinks,
   getCityStats,
+  getGhostStats,
 } from "@/lib/publishedData";
 
 // Long tail renders on demand and is cached; only curated blocks pre-render
@@ -67,9 +68,10 @@ export default async function BlockPage({ params }: BlockPageProps) {
   if (!parsed) notFound();
 
   const code = boroughCode(parsed.boro)!;
-  const [curatedLinks, stats] = await Promise.all([
+  const [curatedLinks, stats, ghostStats] = await Promise.all([
     curatedResultLinks(code),
     getCityStats(),
+    getGhostStats(),
   ]);
   const addressHint = stats.top25Taxable.find(
     (pick) => pick.borough === code && pick.block === parsed.block,
@@ -112,6 +114,8 @@ export default async function BlockPage({ params }: BlockPageProps) {
           boro={parsed.boro as BoroughNumber}
           block={parsed.block}
           curatedLinks={curatedLinks}
+          ghostCaveat={ghostStats.caveat}
+          empireStateSqft={ghostStats.empireStateSqft}
         />
       </Suspense>
     </main>

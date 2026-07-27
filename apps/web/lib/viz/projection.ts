@@ -59,6 +59,7 @@ export function recomputeFit(
   angle: number,
   tilt: number,
   userZoom: number,
+  heightForLot: (lot: Lot) => number = (lot) => hScale(lot.v),
 ): FitState {
   const origin = computeOrigin(lots);
   let fitScale = 1;
@@ -83,7 +84,7 @@ export function recomputeFit(
   });
 
   lots.forEach((l) => {
-    const H = hScale(l.v); // full height for fit (not rise)
+    const H = heightForLot(l); // full height for fit (not rise)
     const x0 = l.c, y0 = l.r;
     const pts = [
       [x0, y0, 0], [x0 + base, y0, 0], [x0 + base, y0 + base, 0], [x0, y0 + base, 0],
@@ -112,7 +113,7 @@ export function recomputeFit(
   // re-project with new scale, then pan to center
   minX = Infinity; maxX = -Infinity; minY = Infinity; maxY = -Infinity;
   lots.forEach((l) => {
-    const H = hScale(l.v);
+    const H = heightForLot(l);
     const x0 = l.c, y0 = l.r;
     [[x0, y0, 0], [x0 + base, y0, 0], [x0 + base, y0 + base, 0], [x0, y0 + base, 0],
      [x0, y0, H], [x0 + base, y0, H], [x0 + base, y0 + base, H], [x0, y0 + base, H]
