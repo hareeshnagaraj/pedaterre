@@ -2,6 +2,7 @@ import { AddressSearch } from "@/components/AddressSearch";
 import { DemoRedirect } from "@/components/DemoRedirect";
 import { boroughNumber } from "@/lib/borough";
 import { getCityStats } from "@/lib/publishedData";
+import { SiteNav } from "@/components/SiteNav";
 
 export const dynamic = "force-static";
 
@@ -15,14 +16,7 @@ export default async function Home() {
   return (
     <main className="landing-page">
       <DemoRedirect />
-      <header className="landing-header">
-        <a className="wordmark" href="/">
-          pedaterre
-        </a>
-        <a className="header-link" href="#sources">
-          Sources &amp; verification
-        </a>
-      </header>
+      <SiteNav />
 
       <section className="landing-hero" aria-labelledby="landing-title">
         <p className="eyebrow">NYC FY2027 FINAL ASSESSMENT ROLL</p>
