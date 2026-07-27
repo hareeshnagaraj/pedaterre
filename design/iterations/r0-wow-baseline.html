@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Block Worth — how rich is your NYC block?</title>
+  <!--
+    WOW concept (research-backed):
+    - neal.fun Size of Life: scale + interaction as the product
+    - jmail.world: clever framing of a data dump (not a table dump)
+    - FlowingData 2025: individual points inside aggregates (Pudding)
+    - Viral tools: self-promoting screenshot (isometric skyline = the card)
+
+    ONE idea: every tax lot is a tower. Height = assessed market value.
+    Your block becomes a miniature Manhattan skyline of inequality.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --void: #0c0b0a;
+      --ink: #e8e2d6;
+      --ink-dim: #9a9286;
+      --paper: #f1ece1;
+      --paper-ink: #161411;
+      --stamp: #e23d2d;
+      --gold: #d4a84b;
+      --you: #5ec8ff;
+      --club: #ffb020;
+      --font: "Libre Franklin", system-ui, sans-serif;
+      --num: "Barlow Condensed", "Arial Narrow", sans-serif;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--void);
+      color: var(--ink);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; border: 0; background: none; }
+    ::selection { background: var(--stamp); color: #fff; }
+
+    /* —— CINEMATIC OPEN —— */
+    .stage {
+      position: relative;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 20px 40px;
+      overflow: hidden;
+    }
+
+    /* ambient city of towers (hero wow) */
+    .skyline {
+      position: absolute;
+      inset: 0;
+      perspective: 900px;
+      pointer-events: none;
+      opacity: 0.55;
+    }
+    .skyline-world {
+      position: absolute;
+      left: 50%;
+      bottom: 18%;
+      width: 1200px;
+      height: 400px;
+      margin-left: -600px;
+      transform-style: preserve-3d;
+      transform: rotateX(58deg) rotateZ(-38deg);
+      animation: drift 28s linear infinite;
+    }
+    @keyframes drift {
+      from { transform: rotateX(58deg) rotateZ(-38deg) translate3d(0, 0, 0); }
+      to { transform: rotateX(58deg) rotateZ(-38deg) translate3d(-80px, 40px, 0); }
+    }
+    .tower {
+      position: absolute;
+      bottom: 0;
+      width: var(--w, 14px);
+      height: var(--h, 40px);
+      left: var(--x, 0);
+      transform: translateZ(var(--z, 0px));
+      transform-style: preserve-3d;
+      background: linear-gradient(180deg, #3a3530 0%, #1a1816 100%);
+      box-shadow:
+        1px 0 0 #0a0908,
+        0 0 20px oklch(0.4 0.05 50 / 0.15);
+    }
+    .tower::before {
+      content: "";
+      position: absolute;
+      left: 100%;
+      top: 0;
+      bottom: 0;
+      width: 40%;
+      background: linear-gradient(180deg, #2a2622, #0f0e0c);
+      transform: skewY(-45deg);
+      transform-origin: left top;
+      opacity: 0.7;
+    }
+    .tower.hot {
+      background: linear-gradient(180deg, #6a2a22 0%, #2a100c 100%);
+      box-shadow: 0 0 24px oklch(0.55 0.15 25 / 0.35);
+    }
+    .tower.hot::before {
+      background: linear-gradient(180deg, #4a1a14, #1a0806);
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 40%, transparent 0%, var(--void) 70%),
+        linear-gradient(180deg, transparent 40%, var(--void) 95%);
+      pointer-events: none;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+      max-width: 640px;
+      margin: 0 auto;
+      width: 100%;
+      animation: rise 1s var(--ease) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .skyline-world, .hero-copy, .iso-world, .counter-num { animation: none !important; }
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 0 0 14px;
+    }
+    .hero-copy h1 {
+      margin: 0 0 12px;
+      font-family: var(--num);
+      font-weight: 800;
+      font-size: clamp(2.8rem, 10vw, 4.5rem);
+      line-height: 0.92;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      text-wrap: balance;
+      text-shadow: 0 0 60px oklch(0.5 0.12 25 / 0.35);
+    }
+    .hero-copy h1 em {
+      font-style: normal;
+      color: var(--stamp);
+    }
+    .sub {
+      margin: 0 0 28px;
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: var(--ink-dim);
+      max-width: 28rem;
+    }
+    .sub strong { color: var(--ink); font-weight: 600; }
+
+    .lookup {
+      display: flex;
+      flex-direction: column;
+      background: oklch(0.18 0.01 50 / 0.85);
+      border: 1px solid oklch(1 0 0 / 0.12);
+      backdrop-filter: blur(12px);
+      max-width: 520px;
+    }
+    .lookup label {
+      padding: 10px 14px 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-dim);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .lookup-row { display: flex; }
+    .lookup input {
+      flex: 1;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      padding: 12px 14px 16px;
+      font-size: 16px;
+      color: var(--ink);
+    }
+    .lookup input::placeholder { color: #5c564e; }
+    .lookup button {
+      min-height: 52px;
+      padding: 0 22px;
+      background: var(--stamp);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      transition: filter 120ms ease, transform 100ms ease;
+    }
+    .lookup button:hover { filter: brightness(1.08); }
+    .lookup button:active { transform: scale(0.97); }
+
+    .examples {
+      margin: 14px 0 0;
+      font-size: 13px;
+      color: var(--ink-dim);
+    }
+    .examples button {
+      color: var(--you);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .ticker {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px 40px;
+      max-width: 640px;
+      margin: 36px auto 0;
+      width: 100%;
+      padding-top: 28px;
+      border-top: 1px solid oklch(1 0 0 / 0.08);
+    }
+    .ticker .lab {
+      font-size: 11px;
+      color: var(--ink-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .ticker .val {
+      font-family: var(--num);
+      font-weight: 800;
+      font-size: 1.75rem;
+      letter-spacing: 0.01em;
+      font-variant-numeric: tabular-nums;
+    }
+    .ticker .val span { color: var(--stamp); }
+
+    /* —— RESULT: THE WOW —— */
+    .result {
+      display: none;
+      min-height: 100dvh;
+      padding: 20px 16px 60px;
+    }
+    .result.is-on { display: block; animation: rise 0.6s var(--ease) both; }
+
+    .result-top {
+      max-width: 960px;
+      margin: 0 auto 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .back {
+      font-size: 13px;
+      color: var(--ink-dim);
+      font-weight: 600;
+    }
+    .back:hover { color: var(--ink); }
+
+    .result-meta { text-align: end; }
+    .result-meta .addr {
+      font-weight: 600;
+      font-size: 15px;
+      margin: 0 0 4px;
+    }
+    .result-meta .bbl {
+      font-size: 12px;
+      color: var(--ink-dim);
+      margin: 0;
+    }
+
+    .wow-grid {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 800px) {
+      .wow-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ISOMETRIC BLOCK — product identity */
+    .iso-panel {
+      position: relative;
+      background: #0a0908;
+      border: 1px solid oklch(1 0 0 / 0.1);
+      min-height: 440px;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .iso-panel canvas {
+      display: block;
+      width: 100%;
+      height: 440px;
+      cursor: grab;
+    }
+    .iso-panel canvas:active { cursor: grabbing; }
+    .iso-hud {
+      position: absolute;
+      left: 12px;
+      bottom: 10px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: oklch(1 0 0 / 0.4);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .mode-switch {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 4;
+      display: flex;
+      gap: 4px;
+      pointer-events: auto;
+    }
+    .mode-switch button {
+      min-height: 32px;
+      padding: 0 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      border: 1px solid oklch(1 0 0 / 0.15);
+      background: oklch(0 0 0 / 0.4);
+    }
+    .mode-switch button[aria-pressed="true"] {
+      color: #0a0908;
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    /* share card panel */
+    .card {
+      background: var(--paper);
+      color: var(--paper-ink);
+      border: 1px solid oklch(1 0 0 / 0.08);
+    }
+    .card-inner { padding: 22px 20px 18px; }
+    .card .brand {
+      font-family: var(--num);
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #736b60;
+      margin: 0 0 16px;
+    }
+    .card .brand span { color: var(--stamp); }
+    .card .where {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }
+    .card .subline {
+      font-size: 12px;
+      color: #736b60;
+      margin: 0 0 14px;
+    }
+    .card .dollars {
+      font-family: var(--num);
+      font-weight: 800;
+      font-size: clamp(3.2rem, 12vw, 4.2rem);
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    .card .dollars .u {
+      color: var(--stamp);
+      font-size: 0.4em;
+      vertical-align: 0.15em;
+    }
+    .card .rank {
+      margin: 10px 0 0;
+      font-family: var(--num);
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+    .card .quip {
+      margin: 14px 0 0;
+      padding-top: 14px;
+      border-top: 1px solid #ddd4c4;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #3f3a34;
+    }
+    .card .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: #ddd4c4;
+      margin-top: 16px;
+    }
+    .card .stats div {
+      background: var(--paper);
+      padding: 12px;
+    }
+    .card .stats .k {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #736b60;
+      margin-bottom: 4px;
+    }
+    .card .stats .v {
+      font-family: var(--num);
+      font-weight: 700;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    .card .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 16px;
+      margin-top: 14px;
+      font-size: 11px;
+      color: #736b60;
+    }
+    .card .legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 5px;
+      vertical-align: -1px;
+    }
+    .card .stamp {
+      margin: 16px 16px 16px;
+      padding: 8px;
+      border: 2px solid var(--stamp);
+      color: var(--stamp);
+      text-align: center;
+      font-family: var(--num);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      transform: rotate(-1.5deg);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .btn {
+      min-height: 44px;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1.5px solid currentColor;
+      transition: transform 100ms ease, background 120ms ease;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-fill {
+      background: var(--stamp);
+      border-color: var(--stamp);
+      color: #fff;
+    }
+    .btn-ghost {
+      color: var(--ink);
+      border-color: oklch(1 0 0 / 0.2);
+    }
+    .btn-ghost:hover { background: oklch(1 0 0 / 0.06); }
+
+    .side-note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--ink-dim);
+      line-height: 1.45;
+      max-width: 36rem;
+    }
+
+    /* inequality strip under iso */
+    .inequality {
+      max-width: 960px;
+      margin: 24px auto 0;
+      padding: 18px 0 0;
+      border-top: 1px solid oklch(1 0 0 / 0.08);
+    }
+    .inequality h2 {
+      margin: 0 0 12px;
+      font-family: var(--num);
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+    }
+    .stack-bar {
+      display: flex;
+      height: 48px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .stack-bar .club {
+      width: 24%;
+      background: linear-gradient(90deg, #ffb020, #e23d2d);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-family: var(--num);
+      font-weight: 700;
+      font-size: 14px;
+      color: #1a1008;
+    }
+    .stack-bar .rest {
+      flex: 1;
+      background: #2a2622;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 12px;
+      font-size: 12px;
+      color: var(--ink-dim);
+    }
+    .stack-caption {
+      margin: 10px 0 0;
+      font-size: 13px;
+      color: var(--ink-dim);
+    }
+    .stack-caption strong { color: var(--ink); }
+
+    .review-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: oklch(0.12 0.01 50 / 0.9);
+      border-bottom: 1px solid oklch(1 0 0 / 0.08);
+      font-size: 11px;
+      color: var(--ink-dim);
+      backdrop-filter: blur(8px);
+    }
+    .review-bar strong { color: var(--gold); }
+    .stage { padding-top: 48px; }
+    .result { padding-top: 56px; }
+  </style>
+</head>
+<body>
+  <div class="review-bar">
+    <span>FIRST-SHARE · <strong>WOW pass</strong> · isometric value skyline</span>
+    <span>mock data · not live DOF</span>
+  </div>
+
+  <!-- LAND: cinematic city of towers -->
+  <section class="stage" id="land">
+    <div class="skyline" aria-hidden="true">
+      <div class="skyline-world" id="hero-skyline"></div>
+    </div>
+    <div class="vignette"></div>
+
+    <div class="hero-copy">
+      <p class="eyebrow">NYC · $1.9 trillion assessed · every tax lot a tower</p>
+      <h1>See your block as a <em>skyline</em> of money</h1>
+      <p class="sub">
+        Each building height is Department of Finance market value — not a sale price.
+        The tall ones own the street. <strong>Type an address. Watch the towers rise.</strong>
+      </p>
+
+      <form class="lookup" id="lookup-form">
+        <label for="addr">Street address in New York City</label>
+        <div class="lookup-row">
+          <input id="addr" type="search" placeholder="200 E 66th St, Manhattan" autocomplete="street-address" enterkeyhint="search" />
+          <button type="submit">Raise towers</button>
+        </div>
+      </form>
+      <p class="examples">
+        Try
+        <button type="button" data-demo="midtown">Midtown whale block</button>
+        ·
+        <button type="button" data-demo="brooklyn">Quiet Brooklyn block</button>
+      </p>
+    </div>
+
+    <div class="ticker">
+      <div>
+        <div class="lab">City total</div>
+        <div class="val"><span>$</span>1.92T</div>
+      </div>
+      <div>
+        <div class="lab">$50M club</div>
+        <div class="val">2,835</div>
+      </div>
+      <div>
+        <div class="lab">Their share</div>
+        <div class="val">~24%</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="result" id="result" aria-live="polite">
+    <div class="result-top">
+      <button type="button" class="back" id="back">← New address</button>
+      <div class="result-meta">
+        <p class="addr" id="r-addr">200 E 66th St → Block 1398</p>
+        <p class="bbl" id="r-bbl">Manhattan · BBL 1-01398 · 38 lots</p>
+      </div>
+    </div>
+
+    <div class="wow-grid">
+      <div class="iso-panel" id="iso-panel">
+        <div class="mode-switch">
+          <button type="button" id="mode-iso" aria-pressed="true">Skyline</button>
+          <button type="button" id="mode-thermal" aria-pressed="false">Thermal</button>
+        </div>
+        <canvas id="city-canvas" width="800" height="440" aria-label="Interactive value skyline of the tax block"></canvas>
+        <div class="iso-hud">
+          <span id="hud-hint">DRAG TO ORBIT · SCROLL TO ZOOM</span>
+          <span id="hud-mode">ISOMETRIC · VALUE = HEIGHT</span>
+        </div>
+      </div>
+
+      <article class="card" id="share-card">
+        <div class="card-inner">
+          <p class="brand">Block <span>Worth</span></p>
+          <p class="where" id="c-where">200 E 66th St · MN Block 1398</p>
+          <p class="subline" id="c-sub">38 lots · 71% LLC by value · DOF FY27</p>
+          <p class="dollars" id="c-dollars">$847.2<span class="u">M</span></p>
+          <p class="rank" id="c-rank">Top 4% of NYC blocks</p>
+          <p class="quip" id="c-quip">
+            One tower is 62% of the block’s assessed value. Everyone else is a row house in its shadow.
+          </p>
+          <div class="stats">
+            <div>
+              <div class="k">Your lot</div>
+              <div class="v" id="c-you">$12.4M</div>
+            </div>
+            <div>
+              <div class="k">Tallest lot</div>
+              <div class="v" id="c-tall">$524M</div>
+            </div>
+            <div>
+              <div class="k">City rank</div>
+              <div class="v" id="c-n">#2,418</div>
+            </div>
+            <div>
+              <div class="k">Whale share</div>
+              <div class="v" id="c-whale">62%</div>
+            </div>
+          </div>
+          <div class="legend">
+            <span><i style="background:#5ec8ff"></i>you</span>
+            <span><i style="background:#ffb020"></i>$50M club</span>
+            <span><i style="background:#4a453e"></i>other lots</span>
+          </div>
+        </div>
+        <div class="stamp" id="c-stamp">BW-MN-1398-FY27</div>
+        <div class="actions" style="padding:0 16px 16px">
+          <button type="button" class="btn btn-fill" id="copy-link">Copy share link</button>
+          <button type="button" class="btn btn-ghost" id="copy-image" style="color:#161411;border-color:#161411">Copy image</button>
+        </div>
+      </article>
+    </div>
+
+    <div class="inequality">
+      <h2>Same math, citywide</h2>
+      <div class="stack-bar">
+        <div class="club">0.24% of lots</div>
+        <div class="rest">hold ~24% of NYC’s assessed value</div>
+      </div>
+      <p class="stack-caption">
+        <strong>2,835</strong> properties above $50M · the towers you saw in gold on the map of every block that has one.
+      </p>
+    </div>
+
+    <p class="side-note" style="max-width:960px;margin:20px auto 0">
+      Heights = DOF market value (assessment), not sale prices. Isometric view is illustrative for design —
+      production extrudes real lots on the block from the FY27 roll.
+    </p>
+  </section>
+
+  <script>
+    /* Hero skyline */
+    (function buildHero() {
+      const root = document.getElementById("hero-skyline");
+      for (let i = 0; i < 200; i++) {
+        const t = document.createElement("div");
+        t.className = "tower" + (Math.random() > 0.9 ? " hot" : "");
+        t.style.setProperty("--h", 18 + Math.pow(Math.random(), 2.3) * 180 + "px");
+        t.style.setProperty("--w", 7 + Math.random() * 20 + "px");
+        t.style.setProperty("--x", Math.random() * 1100 + "px");
+        t.style.setProperty("--z", Math.random() * 320 - 90 + "px");
+        root.appendChild(t);
+      }
+    })();
+
+    const DEMOS = {
+      midtown: {
+        addr: "200 E 66th St → Manhattan Block 1398",
+        bbl: "Manhattan · BBL 1-01398 · 38 lots",
+        where: "200 E 66th St · MN Block 1398",
+        sub: "38 lots · 71% LLC by value · DOF FY27",
+        totalM: 847.2,
+        rank: "Top 4% of NYC blocks",
+        quip: "One tower is 62% of the block’s assessed value. Everyone else is a row house in its shadow.",
+        you: "$12.4M",
+        tall: "$524M",
+        n: "#2,418",
+        whale: "62%",
+        stamp: "BW-MN-1398-FY27",
+        lots: [
+          { c: 0, r: 0, v: 8 }, { c: 1, r: 0, v: 14 }, { c: 2, r: 0, v: 12.4, you: true }, { c: 3, r: 0, v: 5 },
+          { c: 0, r: 1, v: 9 }, { c: 1, r: 1, v: 524, club: true }, { c: 2, r: 1, v: 19 }, { c: 3, r: 1, v: 7 },
+          { c: 0, r: 2, v: 11 }, { c: 1, r: 2, v: 6 }, { c: 2, r: 2, v: 22 }, { c: 3, r: 2, v: 15 },
+          { c: 0, r: 3, v: 4 }, { c: 1, r: 3, v: 18 }, { c: 2, r: 3, v: 9 }, { c: 3, r: 3, v: 16 },
+          { c: 4, r: 0, v: 7 }, { c: 4, r: 1, v: 13 }, { c: 4, r: 2, v: 10 }, { c: 4, r: 3, v: 8 },
+          { c: 5, r: 1, v: 25 }, { c: 5, r: 2, v: 11 }, { c: 2, r: 4, v: 6 }, { c: 3, r: 4, v: 14 },
+        ],
+      },
+      brooklyn: {
+        addr: "347 Jefferson St → Brooklyn Block 3184",
+        bbl: "Brooklyn · BBL 3-03184 · 24 lots",
+        where: "347 Jefferson St · BK Block 3184",
+        sub: "24 lots · 34% LLC by value · DOF FY27",
+        totalM: 196.4,
+        rank: "Top 22% of NYC blocks",
+        quip: "No single whale. Value is spread — still richer than most of the country, quiet on the skyline.",
+        you: "$2.1M",
+        tall: "$18.4M",
+        n: "#12,904",
+        whale: "9%",
+        stamp: "BW-BK-3184-FY27",
+        lots: [
+          { c: 0, r: 0, v: 2.1, you: true }, { c: 1, r: 0, v: 1.8 }, { c: 2, r: 0, v: 3.2 }, { c: 3, r: 0, v: 2.4 },
+          { c: 0, r: 1, v: 4.1 }, { c: 1, r: 1, v: 18.4 }, { c: 2, r: 1, v: 2.9 }, { c: 3, r: 1, v: 1.5 },
+          { c: 0, r: 2, v: 2.6 }, { c: 1, r: 2, v: 3.8 }, { c: 2, r: 2, v: 5.1 }, { c: 3, r: 2, v: 2.2 },
+          { c: 0, r: 3, v: 1.9 }, { c: 1, r: 3, v: 2.7 }, { c: 2, r: 3, v: 4.4 }, { c: 3, r: 3, v: 3.0 },
+          { c: 4, r: 0, v: 2.3 }, { c: 4, r: 1, v: 6.2 }, { c: 4, r: 2, v: 2.0 }, { c: 4, r: 3, v: 1.7 },
+        ],
+      },
+    };
+
+    const land = document.getElementById("land");
+    const result = document.getElementById("result");
+    const canvas = document.getElementById("city-canvas");
+    const ctx = canvas.getContext("2d");
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let mode = "iso"; // iso | thermal
+    let current = null;
+    let angle = -0.55;
+    let tilt = 0.55;
+    let zoom = 1;
+    let drag = false, lx = 0, ly = 0;
+    let rise = 1;
+    let scanY = -40;
+    let raf = 0;
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(440 * dpr);
+      canvas.style.height = "440px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function hScale(v) {
+      return Math.max(8, Math.pow(v, 0.68) * 5.5);
+    }
+
+    function project(x, y, z) {
+      // isometric-ish with orbit
+      const ca = Math.cos(angle), sa = Math.sin(angle);
+      const ct = Math.cos(tilt), st = Math.sin(tilt);
+      const x1 = x * ca - y * sa;
+      const y1 = x * sa + y * ca;
+      const y2 = y1 * ct - z * st;
+      const z2 = y1 * st + z * ct;
+      const w = canvas.clientWidth;
+      const h = 440;
+      const s = 18 * zoom;
+      return {
+        x: w * 0.5 + x1 * s,
+        y: h * 0.72 + y2 * s - z2 * s * 0.15,
+        depth: z2 + y1,
+      };
+    }
+
+    function drawBuilding(c, r, v, flags, maxV) {
+      const base = 0.9;
+      const H = hScale(v) * rise;
+      const x0 = c - 2.5, y0 = r - 2;
+      const corners = [
+        [x0, y0, 0], [x0 + base, y0, 0], [x0 + base, y0 + base, 0], [x0, y0 + base, 0],
+        [x0, y0, H], [x0 + base, y0, H], [x0 + base, y0 + base, H], [x0, y0 + base, H],
+      ].map(([x, y, z]) => project(x, y, z));
+
+      const face = (idxs, fill) => {
+        ctx.beginPath();
+        idxs.forEach((i, n) => {
+          const p = corners[i];
+          n ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,0.25)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      };
+
+      let top, left, right;
+      if (flags.you) {
+        top = "#b8ecff"; left = "#3a8ab0"; right = "#1a5068";
+      } else if (flags.club || v >= 50) {
+        top = "#ffe08a"; left = "#d49220"; right = "#7a4a08";
+      } else {
+        const t = 0.25 + (v / maxV) * 0.45;
+        top = `oklch(${0.38 + t * 0.25} 0.03 70)`;
+        left = `oklch(${0.28 + t * 0.15} 0.025 70)`;
+        right = `oklch(${0.2 + t * 0.1} 0.02 70)`;
+      }
+
+      // painter's order: back faces then top
+      face([0, 1, 5, 4], left);
+      face([1, 2, 6, 5], right);
+      face([4, 5, 6, 7], top);
+
+      if (flags.you || flags.club || v >= 50) {
+        const topC = corners[4];
+        ctx.fillStyle = flags.you ? "rgba(94,200,255,0.9)" : "rgba(255,200,80,0.95)";
+        ctx.font = "700 11px Barlow Condensed, sans-serif";
+        ctx.textAlign = "center";
+        const label = v >= 100 ? "$" + Math.round(v) + "M" : "$" + v.toFixed(1) + "M";
+        ctx.fillText(label, (corners[4].x + corners[6].x) / 2, Math.min(corners[4].y, corners[5].y, corners[6].y, corners[7].y) - 6);
+      }
+    }
+
+    function drawIso() {
+      const w = canvas.clientWidth;
+      const h = 440;
+      ctx.clearRect(0, 0, w, h);
+      // ground plane
+      ctx.fillStyle = "#0a0908";
+      ctx.fillRect(0, 0, w, h);
+
+      const maxV = Math.max(...current.lots.map((l) => l.v));
+      const sorted = [...current.lots].sort((a, b) => {
+        const da = project(a.c, a.r, 0).depth;
+        const db = project(b.c, b.r, 0).depth;
+        return da - db;
+      });
+
+      // ground grid
+      ctx.strokeStyle = "rgba(255,255,255,0.04)";
+      for (let g = -1; g <= 7; g++) {
+        const a = project(g, -1, 0), b = project(g, 6, 0);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        const c = project(-1, g, 0), d = project(7, g, 0);
+        ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.stroke();
+      }
+
+      sorted.forEach((l) => drawBuilding(l.c, l.r, l.v, l, maxV));
+    }
+
+    function thermalColor(v, maxV) {
+      const t = Math.min(1, v / Math.max(maxV, 1));
+      // FLIR-ish: cyan → lime → yellow → magenta
+      if (t < 0.25) return `oklch(${0.45 + t * 0.4} 0.14 220)`;
+      if (t < 0.5) return `oklch(${0.55 + t * 0.2} 0.16 140)`;
+      if (t < 0.75) return `oklch(${0.7} 0.18 90)`;
+      return `oklch(${0.65} 0.22 20)`;
+    }
+
+    function drawThermal() {
+      const w = canvas.clientWidth;
+      const h = 440;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#050508";
+      ctx.fillRect(0, 0, w, h);
+
+      const maxV = Math.max(...current.lots.map((l) => l.v));
+      const maxC = Math.max(...current.lots.map((l) => l.c)) + 1;
+      const maxR = Math.max(...current.lots.map((l) => l.r)) + 1;
+      const totalV = current.lots.reduce((s, l) => s + l.v, 0);
+      const pad = 28;
+      const gw = w - pad * 2;
+      const gh = h - pad * 2 - 36;
+      const cellH = gh / maxR;
+      let x = pad;
+
+      // row-major by row, flex widths by value within row? Simpler: full flex strip
+      // Use full block as proportional horizontal strip (Cursor thermal)
+      const sorted = [...current.lots].sort((a, b) => b.v - a.v);
+      const y0 = pad + 20;
+      const barH = gh * 0.55;
+
+      sorted.forEach((l, i) => {
+        const ww = Math.max(3, (l.v / totalV) * gw);
+        ctx.fillStyle = l.you ? "#5ec8ff" : thermalColor(l.v, maxV);
+        if (l.club || l.v >= 50) {
+          ctx.shadowColor = "rgba(255,80,40,0.55)";
+          ctx.shadowBlur = 18;
+        } else if (l.you) {
+          ctx.shadowColor = "rgba(94,200,255,0.6)";
+          ctx.shadowBlur = 16;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        ctx.globalAlpha = reduceMotion ? 1 : Math.min(1, rise * 1.2 - i * 0.02);
+        ctx.fillRect(x, y0, ww - 1.5, barH * Math.min(1, rise + 0.1));
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+        if (l.you || l.v >= 50) {
+          ctx.fillStyle = "#fff";
+          ctx.font = "700 10px Barlow Condensed, sans-serif";
+          ctx.textAlign = "center";
+          if (ww > 28) {
+            ctx.fillText(l.v >= 100 ? Math.round(l.v) + "M" : l.v.toFixed(0) + "M", x + ww / 2, y0 + barH * 0.5 + 4);
+          }
+        }
+        x += ww;
+      });
+
+      // scan line
+      if (!reduceMotion) {
+        const sy = ((scanY % (h + 80)) + h + 80) % (h + 80) - 40;
+        const g = ctx.createLinearGradient(0, sy - 30, 0, sy + 30);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.12)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, sy - 30, w, 60);
+      }
+
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.font = "600 10px Libre Franklin, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("THERMAL · WIDTH = SHARE OF BLOCK VALUE", pad, pad);
+    }
+
+    function frame() {
+      if (!current) return;
+      if (mode === "iso") drawIso();
+      else drawThermal();
+      if (!reduceMotion) {
+        if (rise < 1) {
+          rise = Math.min(1, rise + 0.04);
+          raf = requestAnimationFrame(frame);
+        } else if (mode === "thermal") {
+          scanY += 1.2;
+          raf = requestAnimationFrame(frame);
+        }
+      }
+    }
+
+    function kickDraw() {
+      cancelAnimationFrame(raf);
+      resizeCanvas();
+      if (!reduceMotion) rise = 0;
+      else rise = 1;
+      scanY = -40;
+      frame();
+      if (!reduceMotion && mode === "iso") {
+        // animate rise only
+        const tick = () => {
+          if (rise < 1) {
+            rise = Math.min(1, rise + 0.05);
+            drawIso();
+            raf = requestAnimationFrame(tick);
+          }
+        };
+        raf = requestAnimationFrame(tick);
+      }
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (mode !== "iso") return;
+      drag = true;
+      lx = e.clientX; ly = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!drag || mode !== "iso") return;
+      angle += (e.clientX - lx) * 0.008;
+      tilt = Math.max(0.25, Math.min(1.1, tilt - (e.clientY - ly) * 0.006));
+      lx = e.clientX; ly = e.clientY;
+      drawIso();
+    });
+    canvas.addEventListener("pointerup", () => { drag = false; });
+    canvas.addEventListener("wheel", (e) => {
+      if (mode !== "iso") return;
+      e.preventDefault();
+      zoom = Math.max(0.55, Math.min(2.2, zoom * (e.deltaY > 0 ? 0.94 : 1.06)));
+      drawIso();
+    }, { passive: false });
+
+    document.getElementById("mode-iso").addEventListener("click", () => {
+      mode = "iso";
+      document.getElementById("mode-iso").setAttribute("aria-pressed", "true");
+      document.getElementById("mode-thermal").setAttribute("aria-pressed", "false");
+      document.getElementById("hud-hint").textContent = "DRAG TO ORBIT · SCROLL TO ZOOM";
+      document.getElementById("hud-mode").textContent = "ISOMETRIC · VALUE = HEIGHT";
+      kickDraw();
+    });
+    document.getElementById("mode-thermal").addEventListener("click", () => {
+      mode = "thermal";
+      document.getElementById("mode-iso").setAttribute("aria-pressed", "false");
+      document.getElementById("mode-thermal").setAttribute("aria-pressed", "true");
+      document.getElementById("hud-hint").textContent = "SCANNING BLOCK…";
+      document.getElementById("hud-mode").textContent = "THERMAL · FLIR OF WEALTH";
+      kickDraw();
+    });
+
+    function countUp(el, target, prefix, suffix) {
+      if (reduceMotion) {
+        el.innerHTML = prefix + target.toFixed(1) + '<span class="u">' + suffix + "</span>";
+        return;
+      }
+      const start = performance.now();
+      const dur = 700;
+      const step = (t) => {
+        const p = Math.min(1, (t - start) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const n = target * eased;
+        el.innerHTML = prefix + n.toFixed(1) + '<span class="u">' + suffix + "</span>";
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    function fillCard(data) {
+      document.getElementById("r-addr").textContent = data.addr;
+      document.getElementById("r-bbl").textContent = data.bbl;
+      document.getElementById("c-where").textContent = data.where;
+      document.getElementById("c-sub").textContent = data.sub;
+      countUp(document.getElementById("c-dollars"), data.totalM, "$", "M");
+      document.getElementById("c-rank").textContent = data.rank;
+      document.getElementById("c-quip").textContent = data.quip;
+      document.getElementById("c-you").textContent = data.you;
+      document.getElementById("c-tall").textContent = data.tall;
+      document.getElementById("c-n").textContent = data.n;
+      document.getElementById("c-whale").textContent = data.whale;
+      document.getElementById("c-stamp").textContent = data.stamp;
+    }
+
+    function showResult(key) {
+      current = DEMOS[key] || DEMOS.midtown;
+      fillCard(current);
+      land.style.display = "none";
+      result.classList.add("is-on");
+      mode = "iso";
+      document.getElementById("mode-iso").setAttribute("aria-pressed", "true");
+      document.getElementById("mode-thermal").setAttribute("aria-pressed", "false");
+      document.getElementById("hud-hint").textContent = "DRAG TO ORBIT · SCROLL TO ZOOM";
+      document.getElementById("hud-mode").textContent = "ISOMETRIC · VALUE = HEIGHT";
+      angle = -0.55; tilt = 0.55; zoom = 1;
+      requestAnimationFrame(() => kickDraw());
+      window.scrollTo(0, 0);
+    }
+
+    function showLand() {
+      result.classList.remove("is-on");
+      land.style.display = "";
+      cancelAnimationFrame(raf);
+      window.scrollTo(0, 0);
+    }
+
+    document.getElementById("lookup-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      showResult("midtown");
+    });
+    document.querySelectorAll("[data-demo]").forEach((btn) => {
+      btn.addEventListener("click", () => showResult(btn.getAttribute("data-demo")));
+    });
+    document.getElementById("back").addEventListener("click", showLand);
+    window.addEventListener("resize", () => {
+      if (current) { resizeCanvas(); if (mode === "iso") drawIso(); else drawThermal(); }
+    });
+
+    function flash(btn, msg) {
+      const p = btn.textContent;
+      btn.textContent = msg;
+      setTimeout(() => { btn.textContent = p; }, 1200);
+    }
+    document.getElementById("copy-link").addEventListener("click", (e) => flash(e.currentTarget, "Copied (mock)"));
+    document.getElementById("copy-image").addEventListener("click", (e) => flash(e.currentTarget, "Image ready (mock)"));
+
+    // Soft auto-hint: after idle, pulse Midtown demo once (no forced navigation)
+    if (!reduceMotion) {
+      setTimeout(() => {
+        const el = document.querySelector('[data-demo="midtown"]');
+        if (el && land.style.display !== "none") {
+          el.animate(
+            [{ textShadow: "0 0 0 transparent" }, { textShadow: "0 0 18px rgba(94,200,255,0.8)" }, { textShadow: "0 0 0 transparent" }],
+            { duration: 1400, iterations: 2 }
+          );
+        }
+      }, 4200);
+    }
+  </script>
+</body>
+</html>

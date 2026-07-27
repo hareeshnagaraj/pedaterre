@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Block Worth — all iterations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Libre+Franklin:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --void: #080706; --ink: #efe9dd; --dim: #8f877c;
+      --stamp: #e23d2d; --gold: #e0b04a; --you: #6ed4ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: "Libre Franklin", system-ui, sans-serif;
+      background: var(--void); color: var(--ink); min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 36px 18px 80px; }
+    h1 {
+      font-family: "Barlow Condensed", sans-serif; font-weight: 800;
+      font-size: clamp(2.2rem, 6vw, 3.4rem); letter-spacing: -0.02em;
+      text-transform: uppercase; margin: 0 0 8px; line-height: 0.95;
+    }
+    h1 span { color: var(--stamp); }
+    .lede { color: var(--dim); max-width: 40rem; line-height: 1.5; margin: 0 0 28px; font-size: 15px; }
+    .lede strong { color: var(--ink); }
+    .latest {
+      display: block; padding: 20px 22px; margin-bottom: 28px;
+      border: 1px solid oklch(0.7 0.12 80 / 0.45);
+      background: linear-gradient(135deg, #1a1510, #0e0c0a);
+      text-decoration: none;
+    }
+    .latest .tag {
+      font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--gold); font-weight: 600; margin-bottom: 8px;
+    }
+    .latest .t {
+      font-family: "Barlow Condensed", sans-serif; font-weight: 800;
+      font-size: 1.85rem; letter-spacing: 0.02em; text-transform: uppercase;
+    }
+    .latest .d { color: var(--dim); margin-top: 8px; font-size: 14px; line-height: 1.45; }
+    h2.sec {
+      font-family: "Barlow Condensed", sans-serif; font-weight: 700;
+      font-size: 0.95rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--dim); margin: 28px 0 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid oklch(1 0 0 / 0.1); background: #11100e;
+      text-decoration: none; display: flex; flex-direction: column; min-height: 168px;
+      transition: border-color 140ms ease, transform 120ms ease;
+    }
+    .card:hover { border-color: oklch(1 0 0 / 0.28); transform: translateY(-2px); }
+    .card.hot { border-color: oklch(0.65 0.14 25 / 0.5); }
+    .card .num {
+      font-family: "Barlow Condensed", sans-serif; font-weight: 800;
+      font-size: 2rem; padding: 14px 14px 0; color: var(--dim); line-height: 1;
+    }
+    .card.hot .num { color: var(--stamp); }
+    .card h3 {
+      margin: 8px 14px 0; font-family: "Barlow Condensed", sans-serif;
+      font-weight: 700; font-size: 1.1rem; letter-spacing: 0.02em; text-transform: uppercase;
+    }
+    .card p {
+      margin: 6px 14px 14px; font-size: 12px; line-height: 1.4; color: var(--dim); flex: 1;
+    }
+    .card .go {
+      padding: 10px 14px; border-top: 1px solid oklch(1 0 0 / 0.08);
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--you);
+    }
+    .research {
+      margin-top: 40px; padding: 18px; border: 1px solid oklch(1 0 0 / 0.08);
+      background: #0c0b0a; font-size: 13px; color: var(--dim); line-height: 1.55;
+    }
+    .research strong { color: var(--ink); }
+    .research code {
+      font-size: 11px; color: var(--you); background: oklch(1 0 0 / 0.05); padding: 1px 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Block <span>Worth</span> lab</h1>
+    <p class="lede">
+      Every iteration on <strong>one link</strong>. Metaphor locked:
+      <strong>each tax lot is a tower</strong> (height = DOF value).
+      Open Midtown whale on R10 first — towers should fully fit the frame.
+    </p>
+
+    <a class="latest" href="./block-worth-mock.html?iter=12">
+      <div class="tag">Current best · open this</div>
+      <div class="t">R12 — depth fog · BEST</div>
+      <div class="d">
+        AABB fit (no clip) · shadows · specular · bloom · dust · whale shaft · god rays ·
+        window lights · depth fog. Codex-validated fit + mesh3d-class polish.
+      </div>
+    </a>
+
+    <h2 class="sec">Foundation (R0–R5)</h2>
+    <div class="grid">
+      <a class="card" href="./iterations/r0-wow-baseline.html">
+        <div class="num">R0</div>
+        <h3>WOW baseline</h3>
+        <p>First skyline + thermal. The breakthrough. Framing raw.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=1">
+        <div class="num">R1</div>
+        <h3>Frame + labels</h3>
+        <p>Label pills, auto-center cluster, denser defaults.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=2">
+        <div class="num">R2</div>
+        <h3>Thermal fills</h3>
+        <p>Multi-row heat map — no black void under the strip.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=3">
+        <div class="num">R3</div>
+        <h3>Fog + materials</h3>
+        <p>Ambient gradient, soft edges, special-tower glow.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=4">
+        <div class="num">R4</div>
+        <h3>Layout balance</h3>
+        <p>Wider viz, 480px stage, sticky share card.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=5">
+        <div class="num">R5</div>
+        <h3>Polish + idle</h3>
+        <p>Count-up $, idle orbit, denser mock lots.</p>
+        <div class="go">Open →</div>
+      </a>
+    </div>
+
+    <h2 class="sec">Insane pass (R6–R10) · X research + framing fix</h2>
+    <div class="grid">
+      <a class="card" href="./block-worth-mock.html?iter=6">
+        <div class="num">R6</div>
+        <h3>AABB fit</h3>
+        <p><strong>Fixes your #1:</strong> project all 8 corners × full height, pad 12%, pan+scale so nothing clips on open.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=7">
+        <div class="num">R7</div>
+        <h3>Shadows + specular</h3>
+        <p>Contact ellipses under towers + roof specular glints (mesh3d polish, canvas 2D).</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=8">
+        <div class="num">R8</div>
+        <h3>Bloom</h3>
+        <p>Blur pass on you / $50M club — wealth literally glows.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=9">
+        <div class="num">R9</div>
+        <h3>Dust + shaft</h3>
+        <p>Floating motes + volumetric light shaft on the whale tower.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=10">
+        <div class="num">R10</div>
+        <h3>God rays</h3>
+        <p>Cinematic screen-space rays + everything above.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card" href="./block-worth-mock.html?iter=11">
+        <div class="num">R11</div>
+        <h3>Window lights</h3>
+        <p>Codex: seeded window constellations — warm + cyan accents on faces.</p>
+        <div class="go">Open →</div>
+      </a>
+      <a class="card hot" href="./block-worth-mock.html?iter=12">
+        <div class="num">R12</div>
+        <h3>Depth fog</h3>
+        <p>Codex: distant towers fade into void — real depth. Current best.</p>
+        <div class="go">Open →</div>
+      </a>
+    </div>
+
+    <div class="research">
+      <strong>X research → what we stole (ethically):</strong><br />
+      · <strong>mesh3d.gallery</strong> bar — jaw-dropping interactive 3D web as the category<br />
+      · <strong>Canvas post-FX</strong> (bloom / screen glow) — wealth imaging, not Zillow cards<br />
+      · <strong>FLIR thermal</strong> — “money radiates heat” (width/area = share)<br />
+      · <strong>neal.fun / Size of Life</strong> — scale as product; towers rising is the story<br />
+      · <strong>AABB fit</strong> — production 3D camera framing: never show a clipped hero on first paint<br /><br />
+      Snapshot: <code>iterations/r0-wow-baseline.html</code> · <code>iterations/r5-polish.html</code><br />
+      Params: <code>block-worth-mock.html?iter=1</code> … <code>?iter=10</code>
+    </div>
+  </div>
+</body>
+</html>

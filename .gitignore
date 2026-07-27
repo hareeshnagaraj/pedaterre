@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+
+# build
+.next/
+dist/
+out/
+build/
+.turbo/
+
+# env
+.env
+.env.*
+!.env.example
+
+# data artifacts (keep fixtures; ignore bulk extracts)
+data/generated/
+*.zip
+*.csv.gz
+
+# vercel / os
+.vercel/
+.DS_Store
+*.log
+
+# design deploy local
+design/.vercel/
+
+# backups
+*.bak
+*~

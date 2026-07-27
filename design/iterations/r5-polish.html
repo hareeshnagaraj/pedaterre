@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Block Worth — R5 polish</title>
+  <!--
+    Iteration flag: set window.__BW_ITER__ before load, or ?iter=1..5
+    R1 frame+labels · R2 thermal fill · R3 fog/materials · R4 layout · R5 polish+idle
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --void: #080706;
+      --ink: #efe9dd;
+      --ink-dim: #8f877c;
+      --paper: #f4efe4;
+      --paper-ink: #141210;
+      --stamp: #e23d2d;
+      --gold: #e0b04a;
+      --you: #6ed4ff;
+      --font: "Libre Franklin", system-ui, sans-serif;
+      --num: "Barlow Condensed", "Arial Narrow", sans-serif;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--void);
+      color: var(--ink);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; border: 0; background: none; }
+    ::selection { background: var(--stamp); color: #fff; }
+
+    .review-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 14px; font-size: 11px; color: var(--ink-dim);
+      background: oklch(0.1 0.01 50 / 0.92);
+      border-bottom: 1px solid oklch(1 0 0 / 0.06);
+      backdrop-filter: blur(10px);
+    }
+    .review-bar strong { color: var(--gold); }
+    .review-bar a { color: var(--you); font-weight: 600; }
+
+    .stage {
+      position: relative; min-height: 100dvh;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 56px 20px 40px; overflow: hidden;
+    }
+    .skyline {
+      position: absolute; inset: 0; perspective: 900px;
+      pointer-events: none; opacity: 0.5;
+    }
+    .skyline-world {
+      position: absolute; left: 50%; bottom: 16%; width: 1200px; height: 400px;
+      margin-left: -600px; transform-style: preserve-3d;
+      transform: rotateX(58deg) rotateZ(-38deg);
+      animation: drift 32s linear infinite;
+    }
+    @keyframes drift {
+      from { transform: rotateX(58deg) rotateZ(-38deg) translate3d(0,0,0); }
+      to { transform: rotateX(58deg) rotateZ(-38deg) translate3d(-90px, 45px, 0); }
+    }
+    .tower {
+      position: absolute; bottom: 0;
+      width: var(--w, 14px); height: var(--h, 40px); left: var(--x, 0);
+      transform: translateZ(var(--z, 0px)); transform-style: preserve-3d;
+      background: linear-gradient(180deg, #3a3530, #141210);
+    }
+    .tower::before {
+      content: ""; position: absolute; left: 100%; top: 0; bottom: 0; width: 40%;
+      background: linear-gradient(180deg, #2a2622, #0c0b0a);
+      transform: skewY(-45deg); transform-origin: left top; opacity: 0.75;
+    }
+    .tower.hot {
+      background: linear-gradient(180deg, #7a3028, #2a100c);
+      box-shadow: 0 0 28px oklch(0.5 0.14 25 / 0.4);
+    }
+    .vignette {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 42%, transparent 0%, var(--void) 72%),
+        linear-gradient(180deg, transparent 35%, var(--void) 96%);
+    }
+    .hero-copy {
+      position: relative; z-index: 2; max-width: 640px; margin: 0 auto; width: 100%;
+      animation: rise 0.9s var(--ease) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .skyline-world, .hero-copy { animation: none !important; }
+    }
+    .eyebrow {
+      font-size: 12px; font-weight: 600; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--gold); margin: 0 0 14px;
+    }
+    .hero-copy h1 {
+      margin: 0 0 12px; font-family: var(--num); font-weight: 800;
+      font-size: clamp(2.8rem, 10vw, 4.5rem); line-height: 0.92;
+      letter-spacing: -0.02em; text-transform: uppercase; text-wrap: balance;
+      text-shadow: 0 0 80px oklch(0.45 0.12 25 / 0.4);
+    }
+    .hero-copy h1 em { font-style: normal; color: var(--stamp); }
+    .sub {
+      margin: 0 0 28px; font-size: 1.05rem; line-height: 1.5;
+      color: var(--ink-dim); max-width: 28rem;
+    }
+    .sub strong { color: var(--ink); font-weight: 600; }
+    .lookup {
+      display: flex; flex-direction: column; max-width: 520px;
+      background: oklch(0.16 0.01 50 / 0.88);
+      border: 1px solid oklch(1 0 0 / 0.1);
+      backdrop-filter: blur(14px);
+    }
+    .lookup label {
+      padding: 10px 14px 0; font-size: 11px; font-weight: 600;
+      color: var(--ink-dim); letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .lookup-row { display: flex; }
+    .lookup input {
+      flex: 1; min-width: 0; border: 0; outline: none; background: transparent;
+      padding: 12px 14px 16px; font-size: 16px; color: var(--ink);
+    }
+    .lookup input::placeholder { color: #5a544c; }
+    .lookup button {
+      min-height: 52px; padding: 0 22px; background: var(--stamp); color: #fff;
+      font-weight: 700; font-size: 14px;
+      transition: filter 120ms ease, transform 100ms ease;
+    }
+    .lookup button:hover { filter: brightness(1.08); }
+    .lookup button:active { transform: scale(0.97); }
+    .examples { margin: 14px 0 0; font-size: 13px; color: var(--ink-dim); }
+    .examples button {
+      color: var(--you); font-weight: 600;
+      text-decoration: underline; text-underline-offset: 3px;
+    }
+    .ticker {
+      position: relative; z-index: 2; display: flex; flex-wrap: wrap;
+      gap: 24px 40px; max-width: 640px; margin: 36px auto 0; width: 100%;
+      padding-top: 28px; border-top: 1px solid oklch(1 0 0 / 0.07);
+    }
+    .ticker .lab {
+      font-size: 11px; color: var(--ink-dim); letter-spacing: 0.06em;
+      text-transform: uppercase; margin-bottom: 4px;
+    }
+    .ticker .val {
+      font-family: var(--num); font-weight: 800; font-size: 1.75rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .ticker .val span { color: var(--stamp); }
+
+    /* RESULT */
+    .result { display: none; min-height: 100dvh; padding: 56px 16px 48px; }
+    .result.is-on { display: block; animation: rise 0.55s var(--ease) both; }
+    .result-top {
+      max-width: 1100px; margin: 0 auto 18px;
+      display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px;
+    }
+    .back { font-size: 13px; color: var(--ink-dim); font-weight: 600; }
+    .back:hover { color: var(--ink); }
+    .result-meta { text-align: end; }
+    .result-meta .addr { font-weight: 600; font-size: 15px; margin: 0 0 4px; }
+    .result-meta .bbl { font-size: 12px; color: var(--ink-dim); margin: 0; }
+
+    .wow-grid {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1.35fr 0.9fr; gap: 18px; align-items: start;
+    }
+    @media (max-width: 900px) {
+      .wow-grid { grid-template-columns: 1fr; }
+    }
+    /* R4: sticky card on tall screens */
+    @media (min-width: 901px) {
+      .card { position: sticky; top: 52px; }
+    }
+
+    .iso-panel {
+      position: relative;
+      background: radial-gradient(ellipse 80% 70% at 50% 60%, #161412 0%, #080706 70%);
+      border: 1px solid oklch(1 0 0 / 0.08);
+      min-height: 480px;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .iso-panel canvas {
+      display: block; width: 100%; height: 480px; cursor: grab;
+    }
+    .iso-panel canvas:active { cursor: grabbing; }
+    .iso-hud {
+      position: absolute; left: 12px; bottom: 10px; right: 12px;
+      display: flex; justify-content: space-between; gap: 8px;
+      font-size: 10px; letter-spacing: 0.1em; color: oklch(1 0 0 / 0.38);
+      z-index: 3; pointer-events: none;
+    }
+    .mode-switch {
+      position: absolute; top: 12px; right: 12px; z-index: 4; display: flex; gap: 4px;
+    }
+    .mode-switch button {
+      min-height: 32px; padding: 0 11px; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--ink-dim); border: 1px solid oklch(1 0 0 / 0.14);
+      background: oklch(0 0 0 / 0.45);
+    }
+    .mode-switch button[aria-pressed="true"] {
+      color: #0a0908; background: var(--ink); border-color: var(--ink);
+    }
+
+    .card {
+      background: var(--paper); color: var(--paper-ink);
+      border: 1px solid oklch(1 0 0 / 0.06);
+      box-shadow: 0 24px 60px oklch(0 0 0 / 0.35);
+    }
+    .card-inner { padding: 22px 20px 16px; }
+    .card .brand {
+      font-family: var(--num); font-weight: 800; font-size: 12px;
+      letter-spacing: 0.1em; text-transform: uppercase; color: #736b60; margin: 0 0 14px;
+    }
+    .card .brand span { color: var(--stamp); }
+    .card .where { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
+    .card .subline { font-size: 12px; color: #736b60; margin: 0 0 14px; }
+    .card .dollars {
+      font-family: var(--num); font-weight: 800;
+      font-size: clamp(3.2rem, 11vw, 4.2rem); line-height: 0.9;
+      letter-spacing: -0.02em; margin: 0; font-variant-numeric: tabular-nums;
+    }
+    .card .dollars .u { color: var(--stamp); font-size: 0.4em; vertical-align: 0.15em; }
+    .card .rank {
+      margin: 10px 0 0; font-family: var(--num); font-weight: 700; font-size: 1.25rem;
+    }
+    .card .quip {
+      margin: 14px 0 0; padding-top: 14px; border-top: 1px solid #ddd4c4;
+      font-size: 13px; line-height: 1.45; color: #3f3a34;
+    }
+    .card .stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+      background: #ddd4c4; margin-top: 16px;
+    }
+    .card .stats div { background: var(--paper); padding: 12px; }
+    .card .stats .k {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+      color: #736b60; margin-bottom: 4px;
+    }
+    .card .stats .v {
+      font-family: var(--num); font-weight: 700; font-size: 1.35rem; line-height: 1;
+    }
+    .card .legend {
+      display: flex; flex-wrap: wrap; gap: 12px 16px; margin-top: 14px;
+      font-size: 11px; color: #736b60;
+    }
+    .card .legend i {
+      display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px;
+    }
+    .card .stamp {
+      margin: 14px 16px; padding: 8px 10px;
+      border: 1.5px solid oklch(0.55 0.18 25 / 0.7);
+      color: oklch(0.5 0.16 25); text-align: center;
+      font-family: var(--num); font-weight: 700; font-size: 12px;
+      letter-spacing: 0.14em; transform: rotate(-0.8deg);
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px; }
+    .btn {
+      min-height: 44px; padding: 0 16px; font-size: 13px; font-weight: 700;
+      border: 1.5px solid currentColor;
+      transition: transform 100ms ease, filter 120ms ease;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-fill { background: var(--stamp); border-color: var(--stamp); color: #fff; }
+    .btn-ghost { color: var(--paper-ink); border-color: var(--paper-ink); }
+    .btn-ghost:hover { background: oklch(0 0 0 / 0.04); }
+
+    .inequality {
+      max-width: 1100px; margin: 28px auto 0;
+      padding-top: 20px; border-top: 1px solid oklch(1 0 0 / 0.07);
+    }
+    .inequality h2 {
+      margin: 0 0 12px; font-family: var(--num); font-weight: 800;
+      font-size: 1.05rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-dim);
+    }
+    .stack-bar { display: flex; height: 44px; width: 100%; overflow: hidden; border-radius: 2px; }
+    .stack-bar .club {
+      width: 24%; background: linear-gradient(90deg, #ffb020, #e23d2d);
+      display: flex; align-items: center; padding: 0 12px;
+      font-family: var(--num); font-weight: 700; font-size: 13px; color: #1a1008;
+    }
+    .stack-bar .rest {
+      flex: 1; background: #1e1b18;
+      display: flex; align-items: center; justify-content: flex-end; padding: 0 12px;
+      font-size: 12px; color: var(--ink-dim);
+    }
+    .stack-caption { margin: 10px 0 0; font-size: 13px; color: var(--ink-dim); }
+    .stack-caption strong { color: var(--ink); }
+    .side-note {
+      max-width: 1100px; margin: 16px auto 0; font-size: 12px;
+      color: var(--ink-dim); line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="review-bar">
+    <span>Block Worth · <strong id="iter-label">R5 polish</strong> · <a href="./index.html">all iterations</a></span>
+    <span>mock data · not live DOF</span>
+  </div>
+
+  <section class="stage" id="land">
+    <div class="skyline" aria-hidden="true"><div class="skyline-world" id="hero-skyline"></div></div>
+    <div class="vignette"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">NYC · $1.9 trillion assessed · every tax lot a tower</p>
+      <h1>See your block as a <em>skyline</em> of money</h1>
+      <p class="sub">
+        Each tower height is DOF market value — not a sale price.
+        The tall ones own the street. <strong>Type an address. Watch the towers rise.</strong>
+      </p>
+      <form class="lookup" id="lookup-form">
+        <label for="addr">Street address in New York City</label>
+        <div class="lookup-row">
+          <input id="addr" type="search" placeholder="200 E 66th St, Manhattan" autocomplete="street-address" enterkeyhint="search" />
+          <button type="submit">Raise towers</button>
+        </div>
+      </form>
+      <p class="examples">
+        Try
+        <button type="button" data-demo="midtown">Midtown whale block</button>
+        ·
+        <button type="button" data-demo="brooklyn">Quiet Brooklyn block</button>
+      </p>
+    </div>
+    <div class="ticker">
+      <div><div class="lab">City total</div><div class="val"><span>$</span>1.92T</div></div>
+      <div><div class="lab">$50M club</div><div class="val">2,835</div></div>
+      <div><div class="lab">Their share</div><div class="val">~24%</div></div>
+    </div>
+  </section>
+
+  <section class="result" id="result" aria-live="polite">
+    <div class="result-top">
+      <button type="button" class="back" id="back">← New address</button>
+      <div class="result-meta">
+        <p class="addr" id="r-addr"></p>
+        <p class="bbl" id="r-bbl"></p>
+      </div>
+    </div>
+    <div class="wow-grid">
+      <div class="iso-panel" id="iso-panel">
+        <div class="mode-switch">
+          <button type="button" id="mode-iso" aria-pressed="true">Skyline</button>
+          <button type="button" id="mode-thermal" aria-pressed="false">Thermal</button>
+        </div>
+        <canvas id="city-canvas" width="900" height="480" aria-label="Value skyline of the tax block"></canvas>
+        <div class="iso-hud">
+          <span id="hud-hint">DRAG TO ORBIT · SCROLL TO ZOOM</span>
+          <span id="hud-mode">ISOMETRIC · VALUE = HEIGHT</span>
+        </div>
+      </div>
+      <article class="card" id="share-card">
+        <div class="card-inner">
+          <p class="brand">Block <span>Worth</span></p>
+          <p class="where" id="c-where"></p>
+          <p class="subline" id="c-sub"></p>
+          <p class="dollars" id="c-dollars"></p>
+          <p class="rank" id="c-rank"></p>
+          <p class="quip" id="c-quip"></p>
+          <div class="stats">
+            <div><div class="k">Your lot</div><div class="v" id="c-you"></div></div>
+            <div><div class="k">Tallest lot</div><div class="v" id="c-tall"></div></div>
+            <div><div class="k">City rank</div><div class="v" id="c-n"></div></div>
+            <div><div class="k">Whale share</div><div class="v" id="c-whale"></div></div>
+          </div>
+          <div class="legend">
+            <span><i style="background:#6ed4ff"></i>you</span>
+            <span><i style="background:#e0b04a"></i>$50M club</span>
+            <span><i style="background:#5a544c"></i>other lots</span>
+          </div>
+        </div>
+        <div class="stamp" id="c-stamp"></div>
+        <div class="actions">
+          <button type="button" class="btn btn-fill" id="copy-link">Copy share link</button>
+          <button type="button" class="btn btn-ghost" id="copy-image">Copy image</button>
+        </div>
+      </article>
+    </div>
+    <div class="inequality">
+      <h2>Same math, citywide</h2>
+      <div class="stack-bar">
+        <div class="club">0.24% of lots</div>
+        <div class="rest">hold ~24% of NYC’s assessed value</div>
+      </div>
+      <p class="stack-caption">
+        <strong>2,835</strong> properties above $50M — gold towers on any block that has one.
+      </p>
+    </div>
+    <p class="side-note">
+      Heights = DOF market value (assessment), not sale prices. Visuals use illustrative lots for design —
+      production extrudes the real FY27 roll for each tax block.
+    </p>
+  </section>
+
+  <script>
+    /* —— Iteration unlocks —— */
+    const params = new URLSearchParams(location.search);
+    const ITER = Math.max(1, Math.min(5, parseInt(params.get("iter") || window.__BW_ITER__ || "5", 10)));
+    const F = {
+      autoFrame: ITER >= 1,
+      labelPills: ITER >= 1,
+      thermalFill: ITER >= 2,
+      thermalTreemap: ITER >= 2,
+      fogMaterials: ITER >= 3,
+      stickyLayout: ITER >= 4, // CSS already sticky; flag for label only
+      idleOrbit: ITER >= 5,
+      countUp: ITER >= 5,
+    };
+    const ITER_NAMES = {
+      1: "R1 · frame + labels",
+      2: "R2 · thermal fills canvas",
+      3: "R3 · fog + materials",
+      4: "R4 · layout balance",
+      5: "R5 · polish + idle orbit",
+    };
+    document.getElementById("iter-label").textContent = ITER_NAMES[ITER];
+    document.title = "Block Worth — " + ITER_NAMES[ITER];
+
+    (function buildHero() {
+      const root = document.getElementById("hero-skyline");
+      for (let i = 0; i < 200; i++) {
+        const t = document.createElement("div");
+        t.className = "tower" + (Math.random() > 0.9 ? " hot" : "");
+        t.style.setProperty("--h", 18 + Math.pow(Math.random(), 2.3) * 180 + "px");
+        t.style.setProperty("--w", 7 + Math.random() * 20 + "px");
+        t.style.setProperty("--x", Math.random() * 1100 + "px");
+        t.style.setProperty("--z", Math.random() * 320 - 90 + "px");
+        root.appendChild(t);
+      }
+    })();
+
+    const DEMOS = {
+      midtown: {
+        addr: "200 E 66th St → Manhattan Block 1398",
+        bbl: "Manhattan · BBL 1-01398 · 38 lots",
+        where: "200 E 66th St · MN Block 1398",
+        sub: "38 lots · 71% LLC by value · DOF FY27",
+        totalM: 847.2,
+        rank: "Top 4% of NYC blocks",
+        quip: "One tower is 62% of the block’s assessed value. Everyone else is a row house in its shadow.",
+        you: "$12.4M", tall: "$524M", n: "#2,418", whale: "62%", stamp: "BW-MN-1398-FY27",
+        lots: [
+          { c: 0, r: 0, v: 8 }, { c: 1, r: 0, v: 14 }, { c: 2, r: 0, v: 12.4, you: true }, { c: 3, r: 0, v: 5 },
+          { c: 0, r: 1, v: 9 }, { c: 1, r: 1, v: 524, club: true }, { c: 2, r: 1, v: 19 }, { c: 3, r: 1, v: 7 },
+          { c: 0, r: 2, v: 11 }, { c: 1, r: 2, v: 6 }, { c: 2, r: 2, v: 22 }, { c: 3, r: 2, v: 15 },
+          { c: 0, r: 3, v: 4 }, { c: 1, r: 3, v: 18 }, { c: 2, r: 3, v: 9 }, { c: 3, r: 3, v: 16 },
+          { c: 4, r: 0, v: 7 }, { c: 4, r: 1, v: 13 }, { c: 4, r: 2, v: 10 }, { c: 4, r: 3, v: 8 },
+          { c: 5, r: 1, v: 25 }, { c: 5, r: 2, v: 11 }, { c: 2, r: 4, v: 6 }, { c: 3, r: 4, v: 14 },
+          { c: 1, r: 4, v: 8 }, { c: 0, r: 4, v: 5.5 }, { c: 5, r: 0, v: 9 }, { c: 5, r: 3, v: 12 },
+        ],
+      },
+      brooklyn: {
+        addr: "347 Jefferson St → Brooklyn Block 3184",
+        bbl: "Brooklyn · BBL 3-03184 · 24 lots",
+        where: "347 Jefferson St · BK Block 3184",
+        sub: "24 lots · 34% LLC by value · DOF FY27",
+        totalM: 196.4,
+        rank: "Top 22% of NYC blocks",
+        quip: "No single whale. Value is spread — still richer than most of the country, quiet on the skyline.",
+        you: "$2.1M", tall: "$18.4M", n: "#12,904", whale: "9%", stamp: "BW-BK-3184-FY27",
+        lots: [
+          { c: 0, r: 0, v: 2.1, you: true }, { c: 1, r: 0, v: 1.8 }, { c: 2, r: 0, v: 3.2 }, { c: 3, r: 0, v: 2.4 },
+          { c: 0, r: 1, v: 4.1 }, { c: 1, r: 1, v: 18.4 }, { c: 2, r: 1, v: 2.9 }, { c: 3, r: 1, v: 1.5 },
+          { c: 0, r: 2, v: 2.6 }, { c: 1, r: 2, v: 3.8 }, { c: 2, r: 2, v: 5.1 }, { c: 3, r: 2, v: 2.2 },
+          { c: 0, r: 3, v: 1.9 }, { c: 1, r: 3, v: 2.7 }, { c: 2, r: 3, v: 4.4 }, { c: 3, r: 3, v: 3.0 },
+          { c: 4, r: 0, v: 2.3 }, { c: 4, r: 1, v: 6.2 }, { c: 4, r: 2, v: 2.0 }, { c: 4, r: 3, v: 1.7 },
+          { c: 5, r: 1, v: 3.5 }, { c: 5, r: 2, v: 2.8 }, { c: 2, r: 4, v: 2.4 }, { c: 3, r: 4, v: 4.0 },
+        ],
+      },
+    };
+
+    const land = document.getElementById("land");
+    const result = document.getElementById("result");
+    const canvas = document.getElementById("city-canvas");
+    const ctx = canvas.getContext("2d");
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let mode = "iso";
+    let current = null;
+    let angle = -0.72;
+    let tilt = 0.62;
+    let zoom = 1;
+    let origin = { x: 0, y: 0 }; // lot-space center
+    let drag = false, lx = 0, ly = 0;
+    let rise = 1;
+    let scanY = 0;
+    let idle = 0;
+    let raf = 0;
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      const cssH = 480;
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+      canvas.style.height = cssH + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function hScale(v) {
+      return Math.max(10, Math.pow(v, 0.66) * 6.2);
+    }
+
+    function computeOrigin(lots) {
+      if (!F.autoFrame) return { x: 2.5, y: 2 };
+      let sx = 0, sy = 0, n = lots.length;
+      lots.forEach((l) => { sx += l.c; sy += l.r; });
+      return { x: sx / n, y: sy / n };
+    }
+
+    function project(x, y, z) {
+      const lx = x - origin.x;
+      const ly = y - origin.y;
+      const ca = Math.cos(angle), sa = Math.sin(angle);
+      const ct = Math.cos(tilt), st = Math.sin(tilt);
+      const x1 = lx * ca - ly * sa;
+      const y1 = lx * sa + ly * ca;
+      const y2 = y1 * ct - z * st;
+      const z2 = y1 * st + z * ct;
+      const w = canvas.clientWidth;
+      const h = 480;
+      const s = (F.autoFrame ? 22 : 18) * zoom;
+      return {
+        x: w * 0.5 + x1 * s,
+        y: h * (F.autoFrame ? 0.58 : 0.72) + y2 * s,
+        depth: z2 + y1,
+      };
+    }
+
+    function drawLabel(px, py, text, color) {
+      ctx.font = "700 12px Barlow Condensed, sans-serif";
+      ctx.textAlign = "center";
+      const tw = ctx.measureText(text).width;
+      if (F.labelPills) {
+        const padX = 6, padY = 3;
+        ctx.fillStyle = "rgba(0,0,0,0.72)";
+        const rx = px - tw / 2 - padX;
+        const ry = py - 11;
+        const rw = tw + padX * 2;
+        const rh = 16;
+        const r = 3;
+        ctx.beginPath();
+        ctx.moveTo(rx + r, ry);
+        ctx.arcTo(rx + rw, ry, rx + rw, ry + rh, r);
+        ctx.arcTo(rx + rw, ry + rh, rx, ry + rh, r);
+        ctx.arcTo(rx, ry + rh, rx, ry, r);
+        ctx.arcTo(rx, ry, rx + rw, ry, r);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = color;
+      ctx.fillText(text, px, py);
+    }
+
+    function drawBuilding(c, r, v, flags, maxV) {
+      const base = 0.92;
+      const H = hScale(v) * rise;
+      const x0 = c, y0 = r;
+      const corners = [
+        [x0, y0, 0], [x0 + base, y0, 0], [x0 + base, y0 + base, 0], [x0, y0 + base, 0],
+        [x0, y0, H], [x0 + base, y0, H], [x0 + base, y0 + base, H], [x0, y0 + base, H],
+      ].map(([x, y, z]) => project(x, y, z));
+
+      const face = (idxs, fill) => {
+        ctx.beginPath();
+        idxs.forEach((i, n) => {
+          const p = corners[i];
+          n ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        if (F.fogMaterials) {
+          ctx.strokeStyle = "rgba(0,0,0,0.35)";
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+      };
+
+      let top, left, right;
+      if (flags.you) {
+        top = "#c8f0ff"; left = "#3d9bc4"; right = "#1a5a78";
+      } else if (flags.club || v >= 50) {
+        top = "#ffe9a8"; left = "#e0a020"; right = "#8a5510";
+      } else {
+        const t = 0.3 + (Math.log10(v + 1) / Math.log10(maxV + 1)) * 0.4;
+        if (F.fogMaterials) {
+          top = `oklch(${0.42 + t * 0.22} 0.028 72)`;
+          left = `oklch(${0.32 + t * 0.14} 0.024 72)`;
+          right = `oklch(${0.24 + t * 0.1} 0.02 72)`;
+        } else {
+          top = "#6a6358"; left = "#4a453e"; right = "#2e2a26";
+        }
+      }
+
+      face([0, 1, 5, 4], left);
+      face([1, 2, 6, 5], right);
+      face([4, 5, 6, 7], top);
+
+      // glow under special towers
+      if ((flags.you || flags.club || v >= 50) && F.fogMaterials) {
+        const cx = (corners[4].x + corners[6].x) / 2;
+        const cy = (corners[0].y + corners[2].y) / 2;
+        const g = ctx.createRadialGradient(cx, cy, 2, cx, cy, 40);
+        g.addColorStop(0, flags.you ? "rgba(110,212,255,0.25)" : "rgba(224,176,74,0.28)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 40, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (flags.you || flags.club || v >= 50) {
+        const topY = Math.min(corners[4].y, corners[5].y, corners[6].y, corners[7].y);
+        const cx = (corners[4].x + corners[6].x) / 2;
+        const label = v >= 100 ? "$" + Math.round(v) + "M" : "$" + (v % 1 ? v.toFixed(1) : v) + "M";
+        drawLabel(cx, topY - 8, label, flags.you ? "#9ae4ff" : "#ffe08a");
+      }
+    }
+
+    function drawIso() {
+      const w = canvas.clientWidth;
+      const h = 480;
+      ctx.clearRect(0, 0, w, h);
+
+      // ambient
+      if (F.fogMaterials) {
+        const bg = ctx.createRadialGradient(w * 0.5, h * 0.55, 20, w * 0.5, h * 0.55, w * 0.55);
+        bg.addColorStop(0, "#1a1714");
+        bg.addColorStop(1, "#080706");
+        ctx.fillStyle = bg;
+      } else {
+        ctx.fillStyle = "#0a0908";
+      }
+      ctx.fillRect(0, 0, w, h);
+
+      const maxV = Math.max(...current.lots.map((l) => l.v));
+      const sorted = [...current.lots].sort((a, b) => project(a.c, a.r, 0).depth - project(b.c, b.r, 0).depth);
+
+      // ground grid
+      ctx.strokeStyle = F.fogMaterials ? "rgba(255,255,255,0.055)" : "rgba(255,255,255,0.04)";
+      const minC = Math.min(...current.lots.map((l) => l.c)) - 1;
+      const maxC = Math.max(...current.lots.map((l) => l.c)) + 2;
+      const minR = Math.min(...current.lots.map((l) => l.r)) - 1;
+      const maxR = Math.max(...current.lots.map((l) => l.r)) + 2;
+      for (let g = minC; g <= maxC; g++) {
+        const a = project(g, minR, 0), b = project(g, maxR, 0);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+      for (let g = minR; g <= maxR; g++) {
+        const a = project(minC, g, 0), b = project(maxC, g, 0);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+
+      sorted.forEach((l) => drawBuilding(l.c, l.r, l.v, l, maxV));
+
+      // soft vignette
+      if (F.fogMaterials) {
+        const vg = ctx.createRadialGradient(w / 2, h / 2, h * 0.2, w / 2, h / 2, h * 0.75);
+        vg.addColorStop(0, "rgba(0,0,0,0)");
+        vg.addColorStop(1, "rgba(0,0,0,0.45)");
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, w, h);
+      }
+    }
+
+    function thermalColor(v, maxV) {
+      const t = Math.min(1, Math.log10(v + 1) / Math.log10(maxV + 1));
+      if (t < 0.35) return `oklch(${0.5 + t * 0.2} 0.12 230)`;
+      if (t < 0.55) return `oklch(${0.62} 0.14 160)`;
+      if (t < 0.75) return `oklch(${0.72} 0.16 95)`;
+      return `oklch(${0.62} 0.2 25)`;
+    }
+
+    /** Squarified-ish single-row → multi-row packing for R2+ */
+    function drawThermal() {
+      const w = canvas.clientWidth;
+      const h = 480;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#050508";
+      ctx.fillRect(0, 0, w, h);
+
+      const maxV = Math.max(...current.lots.map((l) => l.v));
+      const totalV = current.lots.reduce((s, l) => s + l.v, 0);
+      const sorted = [...current.lots].sort((a, b) => b.v - a.v);
+
+      const pad = 24;
+      const legendH = 36;
+      const areaW = w - pad * 2;
+      const areaH = h - pad * 2 - legendH;
+      const y0 = pad + 18;
+
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.font = "600 10px Libre Franklin, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("THERMAL · AREA = SHARE OF BLOCK VALUE", pad, pad + 4);
+
+      if (!F.thermalFill) {
+        // R1: thin strip (old)
+        let x = pad;
+        const barH = 120;
+        const yy = h * 0.35;
+        sorted.forEach((l) => {
+          const ww = Math.max(3, (l.v / totalV) * areaW);
+          ctx.fillStyle = l.you ? "#6ed4ff" : thermalColor(l.v, maxV);
+          ctx.fillRect(x, yy, ww - 1.5, barH);
+          x += ww;
+        });
+      } else if (F.thermalTreemap) {
+        // R2+: fill canvas with rows of proportional blocks
+        let row = 0;
+        let x = pad;
+        let y = y0;
+        const rowH = areaH / 3.2;
+        let rowBudget = areaW;
+        let rowSum = 0;
+        const rows = [[], [], []];
+        let ri = 0;
+        let acc = 0;
+        const third = totalV / 3;
+        sorted.forEach((l) => {
+          if (ri < 2 && acc > third * (ri + 1) * 0.85 && rows[ri].length > 0) ri++;
+          rows[ri].push(l);
+          acc += l.v;
+        });
+        rows.forEach((rowLots, idx) => {
+          if (!rowLots.length) return;
+          const rs = rowLots.reduce((s, l) => s + l.v, 0);
+          let xx = pad;
+          const yy = y0 + idx * (rowH + 8);
+          rowLots.forEach((l) => {
+            const ww = Math.max(4, (l.v / rs) * areaW);
+            if (l.you) {
+              ctx.shadowColor = "rgba(110,212,255,0.55)";
+              ctx.shadowBlur = 14;
+            } else if (l.club || l.v >= 50) {
+              ctx.shadowColor = "rgba(255,100,40,0.45)";
+              ctx.shadowBlur = 16;
+            } else ctx.shadowBlur = 0;
+            ctx.fillStyle = l.you ? "#6ed4ff" : thermalColor(l.v, maxV);
+            const hh = rowH * Math.min(1, rise + 0.15);
+            ctx.globalAlpha = reduceMotion ? 1 : Math.min(1, 0.3 + rise);
+            ctx.fillRect(xx, yy, ww - 2, hh);
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+            if ((l.you || l.v >= 50 || l.v >= maxV * 0.15) && ww > 36) {
+              drawLabel(xx + ww / 2, yy + hh / 2 + 4,
+                l.v >= 100 ? "$" + Math.round(l.v) + "M" : "$" + l.v.toFixed(l.v < 10 ? 1 : 0) + "M",
+                "#fff");
+            }
+            xx += ww;
+          });
+        });
+      }
+
+      // scan
+      if (!reduceMotion && F.thermalFill) {
+        scanY = (scanY + 1.4) % (h + 60);
+        const g = ctx.createLinearGradient(0, scanY - 40, 0, scanY + 40);
+        g.addColorStop(0, "rgba(255,255,255,0)");
+        g.addColorStop(0.5, "rgba(255,255,255,0.1)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, scanY - 40, w, 80);
+      }
+
+      // legend
+      ctx.font = "600 10px Libre Franklin, sans-serif";
+      ctx.textAlign = "left";
+      const items = [
+        ["#6ed4ff", "you"],
+        ["#e07040", "hot ($50M+)"],
+        ["#4a90a8", "cool"],
+      ];
+      let lx = pad;
+      items.forEach(([col, name]) => {
+        ctx.fillStyle = col;
+        ctx.fillRect(lx, h - 22, 10, 10);
+        ctx.fillStyle = "rgba(255,255,255,0.45)";
+        ctx.fillText(name, lx + 14, h - 13);
+        lx += 90;
+      });
+    }
+
+    function frame() {
+      if (!current) return;
+      if (mode === "iso") {
+        if (F.idleOrbit && !drag && !reduceMotion) {
+          idle += 0.0035;
+          angle = -0.72 + Math.sin(idle) * 0.12;
+        }
+        drawIso();
+      } else {
+        drawThermal();
+      }
+      if (!reduceMotion && (mode === "thermal" || (F.idleOrbit && mode === "iso") || rise < 1)) {
+        if (rise < 1) rise = Math.min(1, rise + 0.045);
+        raf = requestAnimationFrame(frame);
+      }
+    }
+
+    function kickDraw() {
+      cancelAnimationFrame(raf);
+      resizeCanvas();
+      origin = computeOrigin(current.lots);
+      rise = reduceMotion ? 1 : 0;
+      scanY = 0;
+      idle = 0;
+      // auto zoom so cluster fills view better
+      if (F.autoFrame) zoom = 1.15;
+      else zoom = 1;
+      raf = requestAnimationFrame(frame);
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (mode !== "iso") return;
+      drag = true; lx = e.clientX; ly = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!drag || mode !== "iso") return;
+      angle += (e.clientX - lx) * 0.008;
+      tilt = Math.max(0.28, Math.min(1.05, tilt - (e.clientY - ly) * 0.006));
+      lx = e.clientX; ly = e.clientY;
+      drawIso();
+    });
+    canvas.addEventListener("pointerup", () => { drag = false; });
+    canvas.addEventListener("wheel", (e) => {
+      if (mode !== "iso") return;
+      e.preventDefault();
+      zoom = Math.max(0.5, Math.min(2.4, zoom * (e.deltaY > 0 ? 0.94 : 1.06)));
+      drawIso();
+    }, { passive: false });
+
+    document.getElementById("mode-iso").addEventListener("click", () => {
+      mode = "iso";
+      document.getElementById("mode-iso").setAttribute("aria-pressed", "true");
+      document.getElementById("mode-thermal").setAttribute("aria-pressed", "false");
+      document.getElementById("hud-hint").textContent = "DRAG TO ORBIT · SCROLL TO ZOOM";
+      document.getElementById("hud-mode").textContent = "ISOMETRIC · VALUE = HEIGHT";
+      kickDraw();
+    });
+    document.getElementById("mode-thermal").addEventListener("click", () => {
+      mode = "thermal";
+      document.getElementById("mode-iso").setAttribute("aria-pressed", "false");
+      document.getElementById("mode-thermal").setAttribute("aria-pressed", "true");
+      document.getElementById("hud-hint").textContent = "SCANNING BLOCK…";
+      document.getElementById("hud-mode").textContent = "THERMAL · AREA = VALUE SHARE";
+      kickDraw();
+    });
+
+    function countUp(el, target) {
+      if (!F.countUp || reduceMotion) {
+        el.innerHTML = "$" + target.toFixed(1) + '<span class="u">M</span>';
+        return;
+      }
+      const start = performance.now();
+      const step = (t) => {
+        const p = Math.min(1, (t - start) / 700);
+        const n = target * (1 - Math.pow(1 - p, 3));
+        el.innerHTML = "$" + n.toFixed(1) + '<span class="u">M</span>';
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    function fillCard(data) {
+      document.getElementById("r-addr").textContent = data.addr;
+      document.getElementById("r-bbl").textContent = data.bbl;
+      document.getElementById("c-where").textContent = data.where;
+      document.getElementById("c-sub").textContent = data.sub;
+      countUp(document.getElementById("c-dollars"), data.totalM);
+      document.getElementById("c-rank").textContent = data.rank;
+      document.getElementById("c-quip").textContent = data.quip;
+      document.getElementById("c-you").textContent = data.you;
+      document.getElementById("c-tall").textContent = data.tall;
+      document.getElementById("c-n").textContent = data.n;
+      document.getElementById("c-whale").textContent = data.whale;
+      document.getElementById("c-stamp").textContent = data.stamp;
+    }
+
+    function showResult(key) {
+      current = DEMOS[key] || DEMOS.midtown;
+      fillCard(current);
+      land.style.display = "none";
+      result.classList.add("is-on");
+      mode = "iso";
+      document.getElementById("mode-iso").setAttribute("aria-pressed", "true");
+      document.getElementById("mode-thermal").setAttribute("aria-pressed", "false");
+      document.getElementById("hud-hint").textContent = "DRAG TO ORBIT · SCROLL TO ZOOM";
+      document.getElementById("hud-mode").textContent = "ISOMETRIC · VALUE = HEIGHT";
+      angle = -0.72; tilt = 0.62; zoom = 1.15;
+      requestAnimationFrame(() => kickDraw());
+      window.scrollTo(0, 0);
+    }
+
+    function showLand() {
+      result.classList.remove("is-on");
+      land.style.display = "";
+      cancelAnimationFrame(raf);
+      window.scrollTo(0, 0);
+    }
+
+    document.getElementById("lookup-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      showResult("midtown");
+    });
+    document.querySelectorAll("[data-demo]").forEach((btn) => {
+      btn.addEventListener("click", () => showResult(btn.getAttribute("data-demo")));
+    });
+    document.getElementById("back").addEventListener("click", showLand);
+    window.addEventListener("resize", () => {
+      if (current) { resizeCanvas(); if (mode === "iso") drawIso(); else drawThermal(); }
+    });
+
+    function flash(btn, msg) {
+      const p = btn.textContent;
+      btn.textContent = msg;
+      setTimeout(() => { btn.textContent = p; }, 1200);
+    }
+    document.getElementById("copy-link").addEventListener("click", (e) => flash(e.currentTarget, "Copied (mock)"));
+    document.getElementById("copy-image").addEventListener("click", (e) => flash(e.currentTarget, "Image ready (mock)"));
+  </script>
+</body>
+</html>

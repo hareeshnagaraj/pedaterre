@@ -1,0 +1,3109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Block Worth — R5 polish</title>
+  <!--
+    Iteration flag: set window.__BW_ITER__ before load, or ?iter=1..5
+    R1 frame+labels · R2 thermal fill · R3 fog/materials · R4 layout · R5 polish+idle
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --void: #080706;
+      --ink: #efe9dd;
+      --ink-dim: #8f877c;
+      --paper: #f4efe4;
+      --paper-ink: #141210;
+      --stamp: #e23d2d;
+      --gold: #e0b04a;
+      --you: #6ed4ff;
+      --font: "Libre Franklin", system-ui, sans-serif;
+      --num: "Barlow Condensed", "Arial Narrow", sans-serif;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--void);
+      color: var(--ink);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; border: 0; background: none; }
+    ::selection { background: var(--stamp); color: #fff; }
+
+    .review-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 14px; font-size: 11px; color: var(--ink-dim);
+      background: oklch(0.1 0.01 50 / 0.92);
+      border-bottom: 1px solid oklch(1 0 0 / 0.06);
+      backdrop-filter: blur(10px);
+    }
+    .review-bar strong { color: var(--gold); }
+    .review-bar a { color: var(--you); font-weight: 600; }
+
+    .stage {
+      position: relative; min-height: 100dvh;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 56px 20px 40px; overflow: hidden;
+    }
+    .skyline {
+      position: absolute; inset: 0; perspective: 900px;
+      pointer-events: none; opacity: 0.5;
+    }
+    .skyline-world {
+      position: absolute; left: 50%; bottom: 16%; width: 1200px; height: 400px;
+      margin-left: -600px; transform-style: preserve-3d;
+      transform: rotateX(58deg) rotateZ(-38deg);
+      animation: drift 32s linear infinite;
+    }
+    @keyframes drift {
+      from { transform: rotateX(58deg) rotateZ(-38deg) translate3d(0,0,0); }
+      to { transform: rotateX(58deg) rotateZ(-38deg) translate3d(-90px, 45px, 0); }
+    }
+    .tower {
+      position: absolute; bottom: 0;
+      width: var(--w, 14px); height: var(--h, 40px); left: var(--x, 0);
+      transform: translateZ(var(--z, 0px)); transform-style: preserve-3d;
+      background: linear-gradient(180deg, #3a3530, #141210);
+    }
+    .tower::before {
+      content: ""; position: absolute; left: 100%; top: 0; bottom: 0; width: 40%;
+      background: linear-gradient(180deg, #2a2622, #0c0b0a);
+      transform: skewY(-45deg); transform-origin: left top; opacity: 0.75;
+    }
+    .tower.hot {
+      background: linear-gradient(180deg, #6a3830, #221410);
+      box-shadow: 0 0 18px oklch(0.42 0.08 30 / 0.22);
+    }
+    .vignette {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 42%, transparent 0%, var(--void) 72%),
+        linear-gradient(180deg, transparent 35%, var(--void) 96%);
+    }
+    .hero-copy {
+      position: relative; z-index: 2; max-width: 640px; margin: 0 auto; width: 100%;
+      animation: rise 0.9s var(--ease) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .skyline-world, .hero-copy { animation: none !important; }
+    }
+    .eyebrow {
+      font-size: 12px; font-weight: 600; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--gold); margin: 0 0 14px;
+    }
+    .hero-copy h1 {
+      margin: 0 0 12px; font-family: var(--num); font-weight: 800;
+      font-size: clamp(2.8rem, 10vw, 4.5rem); line-height: 0.92;
+      letter-spacing: -0.02em; text-transform: uppercase; text-wrap: balance;
+      text-shadow: 0 2px 40px oklch(0 0 0 / 0.45);
+    }
+    .hero-copy h1 em { font-style: normal; color: var(--stamp); }
+    .sub {
+      margin: 0 0 28px; font-size: 1.05rem; line-height: 1.5;
+      color: var(--ink-dim); max-width: 28rem;
+    }
+    .sub strong { color: var(--ink); font-weight: 600; }
+    .lookup {
+      display: flex; flex-direction: column; max-width: 520px;
+      background: oklch(0.16 0.01 50 / 0.88);
+      border: 1px solid oklch(1 0 0 / 0.1);
+      backdrop-filter: blur(14px);
+    }
+    .lookup label {
+      padding: 10px 14px 0; font-size: 11px; font-weight: 600;
+      color: var(--ink-dim); letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .lookup-row { display: flex; }
+    .lookup input {
+      flex: 1; min-width: 0; border: 0; outline: none; background: transparent;
+      padding: 12px 14px 16px; font-size: 16px; color: var(--ink);
+    }
+    .lookup input::placeholder { color: #5a544c; }
+    .lookup button {
+      min-height: 52px; padding: 0 22px; background: var(--stamp); color: #fff;
+      font-weight: 700; font-size: 14px;
+      transition: filter 120ms ease, transform 100ms ease;
+    }
+    .lookup button:hover { filter: brightness(1.08); }
+    .lookup button:active { transform: scale(0.97); }
+    .examples { margin: 14px 0 0; font-size: 13px; color: var(--ink-dim); }
+    .examples button {
+      color: var(--you); font-weight: 600;
+      text-decoration: underline; text-underline-offset: 3px;
+    }
+    .ticker {
+      position: relative; z-index: 2; display: flex; flex-wrap: wrap;
+      gap: 24px 40px; max-width: 640px; margin: 36px auto 0; width: 100%;
+      padding-top: 28px; border-top: 1px solid oklch(1 0 0 / 0.07);
+    }
+    .ticker .lab {
+      font-size: 11px; color: var(--ink-dim); letter-spacing: 0.06em;
+      text-transform: uppercase; margin-bottom: 4px;
+    }
+    .ticker .val {
+      font-family: var(--num); font-weight: 800; font-size: 1.75rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .ticker .val span { color: var(--stamp); }
+
+    /* RESULT */
+    .result { display: none; min-height: 100dvh; padding: 56px 16px 48px; }
+    .result.is-on { display: block; animation: rise 0.55s var(--ease) both; }
+    .result-top {
+      max-width: 1100px; margin: 0 auto 18px;
+      display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px;
+    }
+    .back { font-size: 13px; color: var(--ink-dim); font-weight: 600; }
+    .back:hover { color: var(--ink); }
+    .result-meta { text-align: end; }
+    .result-meta .addr { font-weight: 600; font-size: 15px; margin: 0 0 4px; }
+    .result-meta .bbl { font-size: 12px; color: var(--ink-dim); margin: 0; }
+
+    .wow-grid {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1.35fr 0.9fr; gap: 18px; align-items: start;
+    }
+    @media (max-width: 900px) {
+      .wow-grid { grid-template-columns: 1fr; }
+    }
+    /* R4: sticky card on tall screens */
+    @media (min-width: 901px) {
+      .card { position: sticky; top: 52px; }
+    }
+
+    /* Viz shell: toolbar / stage / footer never overlap (better-ui) */
+    .viz-shell {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid oklch(1 0 0 / 0.08);
+      background: #080706;
+      min-width: 0;
+    }
+    .viz-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid oklch(1 0 0 / 0.08);
+      background: #0e0c0a;
+      flex-shrink: 0;
+    }
+    .viz-toolbar-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      min-width: 0;
+      transition: color 180ms ease;
+    }
+    .viz-toolbar-title strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .mode-switch {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .mode-switch button {
+      min-height: 34px;
+      padding: 0 14px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      border: 1px solid oklch(1 0 0 / 0.12);
+      background: transparent;
+      border-radius: 2px;
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 100ms ease;
+    }
+    .mode-switch button[aria-pressed="true"] {
+      color: #0a0908;
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+    .mode-switch button:hover:not([aria-pressed="true"]) {
+      color: var(--ink);
+      border-color: oklch(1 0 0 / 0.22);
+    }
+    .mode-switch button:active { transform: scale(0.97); }
+
+    .iso-panel {
+      position: relative;
+      background: radial-gradient(ellipse 75% 65% at 50% 58%, #141210 0%, #090807 68%, #060504 100%);
+      min-height: 440px;
+      overflow: hidden;
+      touch-action: none;
+      flex: 1;
+      transition: background 280ms var(--ease);
+    }
+    .iso-panel.is-thermal {
+      background: radial-gradient(ellipse 70% 60% at 48% 42%, #0c1018 0%, #06080e 100%);
+    }
+    .iso-panel canvas {
+      display: block;
+      width: 100%;
+      height: 440px;
+      cursor: grab;
+    }
+    .iso-panel canvas:active { cursor: grabbing; }
+    .iso-panel.is-thermal canvas { cursor: default; }
+
+    /* Skyline-only hint bar — hidden in thermal */
+    .iso-hud {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px 12px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: oklch(1 0 0 / 0.38);
+      background: linear-gradient(transparent, oklch(0 0 0 / 0.42));
+      z-index: 2;
+      pointer-events: none;
+    }
+    .iso-hud span:last-child {
+      color: oklch(1 0 0 / 0.28);
+      font-weight: 600;
+    }
+    .iso-panel.is-thermal .iso-hud { display: none; }
+
+    /* Thermal legend lives outside the map (HTML, not canvas) */
+    .thermal-footer {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-top: 1px solid oklch(1 0 0 / 0.08);
+      background: #0a0c10;
+      flex-shrink: 0;
+    }
+    .viz-shell.is-thermal .thermal-footer { display: flex; }
+    .thermal-legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 18px;
+      font-size: 11px;
+      color: var(--ink-dim);
+    }
+    .thermal-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .thermal-legend i {
+      width: 11px;
+      height: 11px;
+      flex-shrink: 0;
+      border-radius: 2px;
+      outline: 1px solid oklch(1 0 0 / 0.12);
+    }
+    .thermal-ramp {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .thermal-ramp .bar {
+      width: 88px;
+      height: 8px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #14204c 0%, #1e3c6e 11%, #225c76 22%, #287a6c 33%, #388a58 44%, #529246 55%, #729638 66%, #969432 77%, #b48c30 88%, #dc6c28 100%);
+      outline: 1px solid oklch(1 0 0 / 0.1);
+    }
+    .thermal-ramp em {
+      font-style: normal;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: oklch(1 0 0 / 0.32);
+    }
+    .thermal-meta {
+      font-size: 11px;
+      color: oklch(1 0 0 / 0.35);
+      letter-spacing: 0.02em;
+    }
+
+    .card {
+      background: var(--paper); color: var(--paper-ink);
+      border: 1px solid oklch(1 0 0 / 0.06);
+      box-shadow: 0 24px 60px oklch(0 0 0 / 0.35);
+    }
+    .card-inner { padding: 22px 20px 16px; }
+    .card .brand {
+      font-family: var(--num); font-weight: 800; font-size: 12px;
+      letter-spacing: 0.1em; text-transform: uppercase; color: #736b60; margin: 0 0 14px;
+    }
+    .card .brand span { color: var(--stamp); }
+    .card .where { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
+    .card .subline { font-size: 12px; color: #736b60; margin: 0 0 14px; }
+    .card .dollars {
+      font-family: var(--num); font-weight: 800;
+      font-size: clamp(3.2rem, 11vw, 4.2rem); line-height: 0.9;
+      letter-spacing: -0.02em; margin: 0; font-variant-numeric: tabular-nums;
+    }
+    .card .dollars .u { color: var(--stamp); font-size: 0.4em; vertical-align: 0.15em; }
+    .card .rank {
+      margin: 10px 0 0; font-family: var(--num); font-weight: 700; font-size: 1.25rem;
+    }
+    .card .quip {
+      margin: 14px 0 0; padding-top: 14px; border-top: 1px solid #ddd4c4;
+      font-size: 13px; line-height: 1.45; color: #3f3a34;
+    }
+    .card .stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+      background: #ddd4c4; margin-top: 16px;
+    }
+    .card .stats div { background: var(--paper); padding: 12px; }
+    .card .stats .k {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+      color: #736b60; margin-bottom: 4px;
+    }
+    .card .stats .v {
+      font-family: var(--num); font-weight: 700; font-size: 1.35rem; line-height: 1;
+    }
+    .card .legend {
+      display: flex; flex-wrap: wrap; gap: 12px 16px; margin-top: 14px;
+      font-size: 11px; color: #736b60;
+    }
+    .card .legend i {
+      display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px;
+    }
+    .card .stamp {
+      margin: 14px 16px; padding: 8px 10px;
+      border: 1.5px solid oklch(0.55 0.18 25 / 0.7);
+      color: oklch(0.5 0.16 25); text-align: center;
+      font-family: var(--num); font-weight: 700; font-size: 12px;
+      letter-spacing: 0.14em; transform: rotate(-0.8deg);
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px; }
+    .btn {
+      min-height: 44px; padding: 0 16px; font-size: 13px; font-weight: 700;
+      border: 1.5px solid currentColor;
+      transition: transform 100ms ease, filter 120ms ease;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-fill { background: var(--stamp); border-color: var(--stamp); color: #fff; }
+    .btn-ghost { color: var(--paper-ink); border-color: var(--paper-ink); }
+    .btn-ghost:hover { background: oklch(0 0 0 / 0.04); }
+
+    .inequality {
+      max-width: 1100px; margin: 28px auto 0;
+      padding-top: 20px; border-top: 1px solid oklch(1 0 0 / 0.07);
+    }
+    .inequality h2 {
+      margin: 0 0 12px; font-family: var(--num); font-weight: 800;
+      font-size: 1.05rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-dim);
+    }
+    .stack-bar { display: flex; height: 44px; width: 100%; overflow: hidden; border-radius: 2px; }
+    .stack-bar .club {
+      width: 24%; background: linear-gradient(90deg, #ffb020, #e23d2d);
+      display: flex; align-items: center; padding: 0 12px;
+      font-family: var(--num); font-weight: 700; font-size: 13px; color: #1a1008;
+    }
+    .stack-bar .rest {
+      flex: 1; background: #1e1b18;
+      display: flex; align-items: center; justify-content: flex-end; padding: 0 12px;
+      font-size: 12px; color: var(--ink-dim);
+    }
+    .stack-caption { margin: 10px 0 0; font-size: 13px; color: var(--ink-dim); }
+    .stack-caption strong { color: var(--ink); }
+    .side-note {
+      max-width: 1100px; margin: 16px auto 0; font-size: 12px;
+      color: var(--ink-dim); line-height: 1.45;
+    }
+    .side-note a { color: var(--you); font-weight: 600; }
+
+    /* Sources & verification */
+    .sources {
+      max-width: 1100px;
+      margin: 28px auto 0;
+      padding: 20px 18px 18px;
+      border: 1px solid oklch(1 0 0 / 0.1);
+      background: #0c0b0a;
+    }
+    .sources h2 {
+      margin: 0 0 10px;
+      font-family: var(--num);
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+    .sources p {
+      margin: 0 0 12px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--ink-dim);
+      max-width: 48rem;
+    }
+    .sources p strong { color: var(--ink); font-weight: 600; }
+    .sources a {
+      color: var(--you);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .sources-list {
+      list-style: none;
+      margin: 0 0 14px;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .sources-list li {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--ink-dim);
+      padding: 10px 12px;
+      background: oklch(1 0 0 / 0.03);
+      border: 1px solid oklch(1 0 0 / 0.06);
+    }
+    .sources-list li strong {
+      display: block;
+      color: var(--ink);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .verify-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 0 0 12px;
+    }
+    .verify-table th,
+    .verify-table td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid oklch(1 0 0 / 0.08);
+      vertical-align: top;
+      color: var(--ink-dim);
+    }
+    .verify-table th {
+      color: var(--ink);
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .verify-table code {
+      font-size: 11px;
+      color: var(--gold);
+      word-break: break-word;
+    }
+    .badge-mock {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border: 1px solid oklch(0.7 0.12 80 / 0.5);
+      color: var(--gold);
+      margin-left: 6px;
+      vertical-align: 1px;
+    }
+    .badge-live {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border: 1px solid oklch(0.65 0.1 150 / 0.45);
+      color: #7dcaa0;
+      margin-left: 6px;
+    }
+    .land-sources {
+      position: relative;
+      z-index: 2;
+      max-width: 640px;
+      margin: 28px auto 0;
+      width: 100%;
+      padding-top: 20px;
+      border-top: 1px solid oklch(1 0 0 / 0.08);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--ink-dim);
+    }
+    .land-sources a { color: var(--you); font-weight: 600; }
+    .card-source {
+      margin: 0 16px 14px;
+      padding-top: 12px;
+      border-top: 1px solid #ddd4c4;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #736b60;
+    }
+    .card-source a {
+      color: #3f3a34;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="review-bar">
+    <span>Block Worth · <strong id="iter-label">R5 polish</strong> · <a href="./index.html">all iterations</a> · <a href="#sources">sources</a></span>
+    <span>demo lots · DOF roll is the real source</span>
+  </div>
+
+  <section class="stage" id="land">
+    <div class="skyline" aria-hidden="true"><div class="skyline-world" id="hero-skyline"></div></div>
+    <div class="vignette"></div>
+    <div class="hero-copy">
+      <p class="eyebrow">NYC · $1.9 trillion assessed · every tax lot a tower</p>
+      <h1>See your block as a <em>skyline</em> of money</h1>
+      <p class="sub">
+        Each tower height is DOF market value — not a sale price.
+        The tall ones own the street. <strong>Type an address. Watch the towers rise.</strong>
+      </p>
+      <form class="lookup" id="lookup-form">
+        <label for="addr">Street address in New York City</label>
+        <div class="lookup-row">
+          <input id="addr" type="search" placeholder="200 E 66th St, Manhattan" autocomplete="street-address" enterkeyhint="search" />
+          <button type="submit">Raise towers</button>
+        </div>
+      </form>
+      <p class="examples">
+        Try
+        <button type="button" data-demo="midtown">Midtown whale block</button>
+        ·
+        <button type="button" data-demo="brooklyn">Quiet Brooklyn block</button>
+      </p>
+    </div>
+    <div class="ticker">
+      <div><div class="lab">City total</div><div class="val"><span>$</span>1.92T</div></div>
+      <div><div class="lab">$50M club</div><div class="val">2,835</div></div>
+      <div><div class="lab">Their share</div><div class="val">~24%</div></div>
+    </div>
+    <p class="land-sources">
+      Built from the public <strong>NYC Department of Finance</strong> property assessment roll
+      (market value for tax purposes — not sale price).
+      Official: <a href="https://www.nyc.gov/site/finance/property/property-assessments.page" target="_blank" rel="noopener">Property assessments (DOF)</a>
+      · <a href="https://data.cityofnewyork.us/City-Government/Property-Valuation-and-Assessment-Data-Tax-Classes/8y4t-faws" target="_blank" rel="noopener">Open Data · tax classes 1–4</a>
+      · <a href="#sources">How we verify claims →</a>
+    </p>
+  </section>
+
+  <section class="result" id="result" aria-live="polite">
+    <div class="result-top">
+      <button type="button" class="back" id="back">← New address</button>
+      <div class="result-meta">
+        <p class="addr" id="r-addr"></p>
+        <p class="bbl" id="r-bbl"></p>
+      </div>
+    </div>
+    <div class="wow-grid">
+      <div class="viz-shell" id="viz-shell">
+        <div class="viz-toolbar">
+          <div class="viz-toolbar-title" id="viz-title">Skyline · height = assessed value</div>
+          <div class="mode-switch" role="group" aria-label="Visualization mode">
+            <button type="button" id="mode-iso" aria-pressed="true">Skyline</button>
+            <button type="button" id="mode-thermal" aria-pressed="false">Thermal</button>
+          </div>
+        </div>
+        <div class="iso-panel" id="iso-panel">
+          <canvas id="city-canvas" width="900" height="440" aria-label="Value skyline of the tax block"></canvas>
+          <div class="iso-hud" id="iso-hud">
+            <span id="hud-hint">Drag to orbit · scroll to zoom</span>
+            <span id="hud-mode">Isometric</span>
+          </div>
+        </div>
+        <div class="thermal-footer" id="thermal-footer">
+          <div class="thermal-legend">
+            <span><i style="background:#2f8aab"></i>you</span>
+            <span><i style="background:#b87828"></i>$50M club</span>
+            <span class="thermal-ramp" title="Assessed value, cool → warm">
+              <em>low</em><span class="bar" aria-hidden="true"></span><em>high</em>
+            </span>
+          </div>
+          <div class="thermal-meta" id="thermal-meta">Area ∝ value · every lot shown</div>
+        </div>
+      </div>
+      <article class="card" id="share-card">
+        <div class="card-inner">
+          <p class="brand">Block <span>Worth</span></p>
+          <p class="where" id="c-where"></p>
+          <p class="subline" id="c-sub"></p>
+          <p class="dollars" id="c-dollars"></p>
+          <p class="rank" id="c-rank"></p>
+          <p class="quip" id="c-quip"></p>
+          <div class="stats">
+            <div><div class="k">Your lot</div><div class="v" id="c-you"></div></div>
+            <div><div class="k">Tallest lot</div><div class="v" id="c-tall"></div></div>
+            <div><div class="k">City rank</div><div class="v" id="c-n"></div></div>
+            <div><div class="k">Whale share</div><div class="v" id="c-whale"></div></div>
+          </div>
+          <div class="legend">
+            <span><i style="background:#6ed4ff"></i>you</span>
+            <span><i style="background:#e0b04a"></i>$50M club</span>
+            <span><i style="background:#5a544c"></i>other lots</span>
+          </div>
+        </div>
+        <div class="stamp" id="c-stamp"></div>
+        <p class="card-source">
+          DOF assessed market value · FY assessment roll · not a sale price or Zestimate.
+          Source: <a href="https://www.nyc.gov/site/finance/property/property-assessments.page" target="_blank" rel="noopener">nyc.gov/finance</a>
+        </p>
+        <div class="actions">
+          <button type="button" class="btn btn-fill" id="copy-link">Copy share link</button>
+          <button type="button" class="btn btn-ghost" id="copy-image">Copy image</button>
+        </div>
+      </article>
+    </div>
+    <div class="inequality">
+      <h2>Same math, citywide <span class="badge-mock">demo numbers</span></h2>
+      <div class="stack-bar">
+        <div class="club">0.24% of lots</div>
+        <div class="rest">hold ~24% of NYC’s assessed value</div>
+      </div>
+      <p class="stack-caption">
+        <strong>2,835</strong> properties above $50M — gold towers on any block that has one.
+        Citywide cuts in production recompute from the full DOF roll (see verification table below).
+      </p>
+    </div>
+
+    <section class="sources" id="sources" aria-labelledby="sources-heading">
+      <h2 id="sources-heading">Sources &amp; verification</h2>
+      <p>
+        This product started from the public NYC DOF property assessment dump
+        (every tax lot, owner as filed, and market value) — the same release that circulated widely in July 2026.
+        We do <strong>not</strong> invent sale prices. Towers, thermal area, ranks, and “$50M club” stats are all derived fields from the assessment roll.
+      </p>
+      <ul class="sources-list">
+        <li>
+          <strong>Primary · NYC Department of Finance</strong>
+          FY property assessment roll (final / supplemental as published) — market value, BBL, building class, owner name as filed.
+          <a href="https://www.nyc.gov/site/finance/property/property-assessments.page" target="_blank" rel="noopener">Property assessments page</a>
+          · download zips by tax class (e.g. FY27 <code>fy27_avroll1234.zip</code> and class files linked there).
+        </li>
+        <li>
+          <strong>Machine-readable · NYC Open Data</strong>
+          Property Valuation and Assessment Data (tax classes 1, 2, 3, 4) — DOF as dataset owner.
+          <a href="https://data.cityofnewyork.us/City-Government/Property-Valuation-and-Assessment-Data-Tax-Classes/8y4t-faws" target="_blank" rel="noopener">Open Data dataset 8y4t-faws</a>
+          · <a href="https://data.cityofnewyork.us/City-Government/Property-Valuation-and-Assessment-Data/yjxr-fw8i" target="_blank" rel="noopener">related assessment dataset yjxr-fw8i</a>
+        </li>
+        <li>
+          <strong>Lookups · official city tools</strong>
+          <a href="https://propertyinformationportal.nyc.gov/" target="_blank" rel="noopener">Property Information Portal</a>
+          (parcel map / assessment) · Geosearch for address → BBL via NYC Planning Labs GeoSearch when wired in production.
+        </li>
+      </ul>
+
+      <p><strong>How every claim is verified in production</strong> (this preview still uses illustrative lots; badges mark status):</p>
+      <table class="verify-table">
+        <thead>
+          <tr>
+            <th>Claim on UI</th>
+            <th>Definition (code)</th>
+            <th>Source field</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lot / tower “worth”</td>
+            <td><code>market_value</code> (or current DOF MV column on the roll year)</td>
+            <td>DOF assessment roll · market value</td>
+            <td><span class="badge-mock">demo</span></td>
+          </tr>
+          <tr>
+            <td>Block total</td>
+            <td><code>sum(MV)</code> over all lots with same borough + block</td>
+            <td>BBL → borough, block, lot</td>
+            <td><span class="badge-mock">demo</span></td>
+          </tr>
+          <tr>
+            <td>City rank / percentile</td>
+            <td>Rank of block total among all tax blocks</td>
+            <td>Derived from full roll</td>
+            <td><span class="badge-mock">demo</span></td>
+          </tr>
+          <tr>
+            <td>Whale share</td>
+            <td><code>max(MV on block) / block_total</code></td>
+            <td>Derived</td>
+            <td><span class="badge-mock">demo</span></td>
+          </tr>
+          <tr>
+            <td>$50M club</td>
+            <td><code>MV &gt; 50_000_000</code> · count and share of city total MV</td>
+            <td>Derived from full roll</td>
+            <td><span class="badge-mock">demo</span></td>
+          </tr>
+          <tr>
+            <td>LLC share of block</td>
+            <td>Share of MV where owner string matches entity patterns (LLC, L.L.C., LP, CORP, etc.) — exact rules documented in ETL</td>
+            <td>Owner as filed on roll</td>
+            <td><span class="badge-mock">demo</span></td>
+          </tr>
+          <tr>
+            <td>Owner name</td>
+            <td>Exact roll string · no entity resolution / no fuzzy match</td>
+            <td>Owner field</td>
+            <td><span class="badge-mock">demo</span></td>
+          </tr>
+          <tr>
+            <td>Citywide headline stats</td>
+            <td>Recomputed on each roll ingest; never hard-coded in production</td>
+            <td>Full roll aggregate job</td>
+            <td><span class="badge-mock">demo</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>Preview honesty:</strong> demos on this page use fixed illustrative lots so design can ship without waiting for ETL.
+        Production will (1) ingest the DOF zip / Open Data extract, (2) write block + lot tables with the definitions above,
+        (3) show roll year + extract hash in the footer, and (4) link each BBL back to the Property Information Portal.
+      </p>
+      <p style="margin:0">
+        Not a PDF originally — the source of truth is the <strong>DOF assessment roll databases</strong> published on nyc.gov and mirrored on Open Data.
+        Any press PDF or summary chart is secondary; we always recompute from the lot-level file.
+      </p>
+    </section>
+
+    <p class="side-note">
+      Heights and thermal area use DOF assessed market value, not sale prices or Zestimates.
+      Official assessments: <a href="https://www.nyc.gov/site/finance/property/property-assessments.page" target="_blank" rel="noopener">nyc.gov/finance</a>.
+    </p>
+  </section>
+
+  <script>
+    /* —— Iteration unlocks (R1–R10) —— */
+    const params = new URLSearchParams(location.search);
+    const ITER = Math.max(1, Math.min(20, parseInt(params.get("iter") || window.__BW_ITER__ || "20", 10)));
+    /* Restraint pass: craft over FX. Bloom/god-rays/dust stay off by default. */
+    const F = {
+      autoFrame: ITER >= 1,
+      labelPills: ITER >= 1,
+      thermalFill: ITER >= 2,
+      thermalTreemap: ITER >= 2,
+      fogMaterials: ITER >= 3,
+      stickyLayout: ITER >= 4,
+      idleOrbit: ITER >= 5,
+      countUp: ITER >= 5,
+      aabbFit: ITER >= 6,
+      groundShadow: ITER >= 7,
+      specular: ITER >= 7,
+      bloom: false,            // was R8 — too sparkly
+      dust: false,             // was R9 — busy
+      lightShaft: false,       // was R9 — god-ray adjacent
+      godRays: false,          // was R10 — overstated
+      windows: ITER >= 8,      // soft façade lights only
+      depthFog: ITER >= 9,     // atmospheric depth, quiet
+      thermalReveal: ITER >= 2,
+    };
+    const ITER_NAMES = {
+      1: "R1 · frame + labels",
+      2: "R2 · thermal fills canvas",
+      3: "R3 · fog + materials",
+      4: "R4 · layout balance",
+      5: "R5 · polish + idle orbit",
+      6: "R6 · AABB fit (no clip)",
+      7: "R7 · shadows + specular",
+      8: "R8 · façade lights",
+      9: "R9 · depth fog",
+      10: "R10 · restraint polish",
+      11: "R11 · thermal craft",
+      12: "R12 · facade + ramp",
+      13: "R13 · labels + mullions",
+      14: "R14 · hierarchy + massing",
+      15: "R15 · streets + silhouette",
+      16: "R16 · final polish",
+      17: "R17 · thermal clarity",
+      18: "R18 · calm motion",
+      19: "R19 · diorama craft",
+      20: "R20 · session close",
+    };
+    document.getElementById("iter-label").textContent = ITER_NAMES[ITER] || ("R" + ITER);
+    document.title = "Block Worth — " + (ITER_NAMES[ITER] || ITER);
+
+    (function buildHero() {
+      const root = document.getElementById("hero-skyline");
+      for (let i = 0; i < 200; i++) {
+        const t = document.createElement("div");
+        t.className = "tower" + (Math.random() > 0.9 ? " hot" : "");
+        t.style.setProperty("--h", 18 + Math.pow(Math.random(), 2.3) * 180 + "px");
+        t.style.setProperty("--w", 7 + Math.random() * 20 + "px");
+        t.style.setProperty("--x", Math.random() * 1100 + "px");
+        t.style.setProperty("--z", Math.random() * 320 - 90 + "px");
+        root.appendChild(t);
+      }
+    })();
+
+    const DEMOS = {
+      midtown: {
+        addr: "200 E 66th St → Manhattan Block 1398",
+        bbl: "Manhattan · BBL 1-01398 · 38 lots",
+        where: "200 E 66th St · MN Block 1398",
+        sub: "38 lots · 71% LLC by value · DOF FY27",
+        totalM: 847.2,
+        rank: "Top 4% of NYC blocks",
+        quip: "One tower is 62% of the block’s assessed value. Everyone else is a row house in its shadow.",
+        you: "$12.4M", tall: "$524M", n: "#2,418", whale: "62%", stamp: "BW-MN-1398-FY27",
+        lots: [
+          { c: 0, r: 0, v: 8 }, { c: 1, r: 0, v: 14 }, { c: 2, r: 0, v: 12.4, you: true }, { c: 3, r: 0, v: 5 },
+          { c: 0, r: 1, v: 9 }, { c: 1, r: 1, v: 524, club: true }, { c: 2, r: 1, v: 19 }, { c: 3, r: 1, v: 7 },
+          { c: 0, r: 2, v: 11 }, { c: 1, r: 2, v: 6 }, { c: 2, r: 2, v: 22 }, { c: 3, r: 2, v: 15 },
+          { c: 0, r: 3, v: 4 }, { c: 1, r: 3, v: 18 }, { c: 2, r: 3, v: 9 }, { c: 3, r: 3, v: 16 },
+          { c: 4, r: 0, v: 7 }, { c: 4, r: 1, v: 13 }, { c: 4, r: 2, v: 10 }, { c: 4, r: 3, v: 8 },
+          { c: 5, r: 1, v: 25 }, { c: 5, r: 2, v: 11 }, { c: 2, r: 4, v: 6 }, { c: 3, r: 4, v: 14 },
+          { c: 1, r: 4, v: 8 }, { c: 0, r: 4, v: 5.5 }, { c: 5, r: 0, v: 9 }, { c: 5, r: 3, v: 12 },
+        ],
+      },
+      brooklyn: {
+        addr: "347 Jefferson St → Brooklyn Block 3184",
+        bbl: "Brooklyn · BBL 3-03184 · 24 lots",
+        where: "347 Jefferson St · BK Block 3184",
+        sub: "24 lots · 34% LLC by value · DOF FY27",
+        totalM: 196.4,
+        rank: "Top 22% of NYC blocks",
+        quip: "No single whale. Value is spread — still richer than most of the country, quiet on the skyline.",
+        you: "$2.1M", tall: "$18.4M", n: "#12,904", whale: "9%", stamp: "BW-BK-3184-FY27",
+        lots: [
+          { c: 0, r: 0, v: 2.1, you: true }, { c: 1, r: 0, v: 1.8 }, { c: 2, r: 0, v: 3.2 }, { c: 3, r: 0, v: 2.4 },
+          { c: 0, r: 1, v: 4.1 }, { c: 1, r: 1, v: 18.4 }, { c: 2, r: 1, v: 2.9 }, { c: 3, r: 1, v: 1.5 },
+          { c: 0, r: 2, v: 2.6 }, { c: 1, r: 2, v: 3.8 }, { c: 2, r: 2, v: 5.1 }, { c: 3, r: 2, v: 2.2 },
+          { c: 0, r: 3, v: 1.9 }, { c: 1, r: 3, v: 2.7 }, { c: 2, r: 3, v: 4.4 }, { c: 3, r: 3, v: 3.0 },
+          { c: 4, r: 0, v: 2.3 }, { c: 4, r: 1, v: 6.2 }, { c: 4, r: 2, v: 2.0 }, { c: 4, r: 3, v: 1.7 },
+          { c: 5, r: 1, v: 3.5 }, { c: 5, r: 2, v: 2.8 }, { c: 2, r: 4, v: 2.4 }, { c: 3, r: 4, v: 4.0 },
+        ],
+      },
+    };
+
+    const land = document.getElementById("land");
+    const result = document.getElementById("result");
+    const canvas = document.getElementById("city-canvas");
+    const ctx = canvas.getContext("2d");
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let mode = "iso";
+    let current = null;
+    let angle = -0.72;
+    let baseAngle = -0.72; // idle orbits around last user angle
+    let baseTilt = 0.58;
+    let tilt = 0.58;
+    let userZoom = 1;
+    let origin = { x: 0, y: 0 };
+    let fitScale = 1;
+    let fitPanX = 0;
+    let fitPanY = 0;
+    let drag = false, lx = 0, ly = 0;
+    let rise = 1;
+    let thermalT = 1; // 0→1 reveal for thermal cells
+    let idle = 0;
+    let raf = 0;
+    let dust = [];
+    let thermalCells = [];
+    let thermalDistricts = []; // hierarchical region frames (NN/G group borders)
+    let hoverCell = null;
+    let pinnedLot = null; // tap-to-pin on touch / click
+    let angVel = 0;
+    const CSS_H = 440;
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(CSS_H * dpr);
+      canvas.style.height = CSS_H + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function hScale(v) {
+      // Soft-cap whales; lift mid street so silhouette reads as a city, not one spike
+      // Extra mid-band lift ($4–35M) so the skyline isn't flat-then-spike
+      const capped = Math.min(v, 220) + Math.log10(v + 1) * 44;
+      const midLift = Math.pow(Math.min(v, 40) / 40, 0.55) * 18;
+      const lowLift = Math.pow(Math.min(v, 12) / 12, 0.7) * 6;
+      return Math.max(11, Math.pow(capped, 0.58) * 5.7 + midLift + lowLift);
+    }
+
+    function computeOrigin(lots) {
+      let sx = 0, sy = 0, n = lots.length || 1;
+      lots.forEach((l) => { sx += l.c + 0.46; sy += l.r + 0.46; });
+      return { x: sx / n, y: sy / n };
+    }
+
+    /** Project lot-space → screen (uses fit + user zoom) */
+    function project(x, y, z) {
+      const dx = x - origin.x;
+      const dy = y - origin.y;
+      const ca = Math.cos(angle), sa = Math.sin(angle);
+      const ct = Math.cos(tilt), st = Math.sin(tilt);
+      const x1 = dx * ca - dy * sa;
+      const y1 = dx * sa + dy * ca;
+      const y2 = y1 * ct - z * st;
+      const z2 = y1 * st + z * ct;
+      const s = 20 * fitScale * userZoom;
+      const w = canvas.clientWidth;
+      return {
+        x: w * 0.5 + fitPanX + x1 * s,
+        y: CSS_H * 0.5 + fitPanY + y2 * s,
+        depth: z2 + y1,
+        s,
+      };
+    }
+
+    /**
+     * R6+ AABB fit: every building corner at FULL height must land inside
+     * the canvas with padding (extra top for labels).
+     */
+    function recomputeFit() {
+      if (!current) return;
+      origin = computeOrigin(current.lots);
+      fitScale = 1;
+      fitPanX = 0;
+      fitPanY = 0;
+      userZoom = Math.max(userZoom, 0.01);
+
+      if (!F.aabbFit && !F.autoFrame) {
+        fitScale = 1.1;
+        return;
+      }
+
+      const w = canvas.clientWidth || 800;
+      const h = CSS_H;
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      const base = 0.92;
+
+      current.lots.forEach((l) => {
+        const H = hScale(l.v); // full height for fit (not rise)
+        const x0 = l.c, y0 = l.r;
+        const pts = [
+          [x0, y0, 0], [x0 + base, y0, 0], [x0 + base, y0 + base, 0], [x0, y0 + base, 0],
+          [x0, y0, H], [x0 + base, y0, H], [x0 + base, y0 + base, H], [x0, y0 + base, H],
+        ];
+        pts.forEach(([x, y, z]) => {
+          const p = project(x, y, z);
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        });
+      });
+
+      // label headroom (YOU combined plate) + iso-hud strip
+      minY -= F.labelPills ? 40 : 14;
+      maxY += 42;
+
+      const bw = Math.max(40, maxX - minX);
+      const bh = Math.max(40, maxY - minY);
+      // 12% pad each side → 76% usable (Codex-style AABB fit)
+      const pad = F.aabbFit ? 0.76 : 0.88;
+      fitScale = Math.min((w * pad) / bw, (h * pad) / bh);
+      fitScale = Math.max(0.15, Math.min(fitScale, 4));
+
+      // re-project with new scale, then pan to center
+      minX = Infinity; maxX = -Infinity; minY = Infinity; maxY = -Infinity;
+      current.lots.forEach((l) => {
+        const H = hScale(l.v);
+        const x0 = l.c, y0 = l.r;
+        [[x0, y0, 0], [x0 + base, y0, 0], [x0 + base, y0 + base, 0], [x0, y0 + base, 0],
+         [x0, y0, H], [x0 + base, y0, H], [x0 + base, y0 + base, H], [x0, y0 + base, H]
+        ].forEach(([x, y, z]) => {
+          const p = project(x, y, z);
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        });
+      });
+      minY -= F.labelPills ? 40 : 14;
+
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      fitPanX += w * 0.5 - cx;
+      fitPanY += h * 0.54 - cy; // optical bias down (sky / labels above)
+    }
+
+    function initDust() {
+      dust = [];
+      if (!F.dust) return;
+      for (let i = 0; i < 48; i++) {
+        dust.push({
+          x: Math.random() * 8 - 1,
+          y: Math.random() * 8 - 1,
+          z: Math.random() * 80,
+          v: 0.15 + Math.random() * 0.35,
+        });
+      }
+    }
+
+    function drawLabel(px, py, text, color) {
+      ctx.font = "700 12px Barlow Condensed, sans-serif";
+      ctx.textAlign = "center";
+      const tw = ctx.measureText(text).width;
+      if (F.labelPills) {
+        const padX = 7;
+        ctx.fillStyle = "rgba(8,7,6,0.58)";
+        const rx = px - tw / 2 - padX;
+        const ry = py - 11;
+        const rw = tw + padX * 2;
+        const rh = 16;
+        const r = 4;
+        ctx.beginPath();
+        ctx.moveTo(rx + r, ry);
+        ctx.arcTo(rx + rw, ry, rx + rw, ry + rh, r);
+        ctx.arcTo(rx + rw, ry + rh, rx, ry + rh, r);
+        ctx.arcTo(rx, ry + rh, rx, ry, r);
+        ctx.arcTo(rx, ry, rx + rw, ry, r);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = color;
+      ctx.fillText(text, px, py);
+    }
+
+    /** Staggered rise: specials & whales first, mids settle after (hierarchy in time). */
+    function lotRise(v, flags, maxV) {
+      if (reduceMotion || rise >= 0.999) return 1;
+      // hierarchy in time: specials first, then by log-value; snappier settle
+      let delay = 0.06 + (1 - Math.min(1, Math.log10(v + 1) / Math.log10(maxV + 1))) * 0.28;
+      if (flags.you) delay = 0.0;
+      else if (flags.club || v >= 50) delay = 0.025;
+      const span = Math.max(0.18, 1 - delay * 0.9);
+      const t = Math.max(0, (rise - delay) / span);
+      return easeOutQuart(Math.min(1, t));
+    }
+
+    function drawBuilding(c, r, v, flags, maxV, bloomPass) {
+      const base = 0.92;
+      const localRise = lotRise(v, flags, maxV);
+      if (localRise < 0.02 && !bloomPass) return;
+      const H = hScale(v) * localRise;
+      const x0 = c, y0 = r;
+      // short plinth — refined city-block craft (not a gimmick)
+      const ph = Math.min(H * 0.12, Math.max(1.6 * localRise, 2.2 * localRise));
+      const pb = base + 0.06; // plinth slightly wider
+      const px0 = x0 - 0.03, py0 = y0 - 0.03;
+      const corners = [
+        [x0, y0, ph], [x0 + base, y0, ph], [x0 + base, y0 + base, ph], [x0, y0 + base, ph],
+        [x0, y0, H], [x0 + base, y0, H], [x0 + base, y0 + base, H], [x0, y0 + base, H],
+      ].map(([x, y, z]) => project(x, y, z));
+      const plinth = [
+        [px0, py0, 0], [px0 + pb, py0, 0], [px0 + pb, py0 + pb, 0], [px0, py0 + pb, 0],
+        [px0, py0, ph], [px0 + pb, py0, ph], [px0 + pb, py0 + pb, ph], [px0, py0 + pb, ph],
+      ].map(([x, y, z]) => project(x, y, z));
+
+      // soft ground contact — tight matte, not shadow blob
+      if (F.groundShadow && !bloomPass) {
+        const g0 = project(x0 + 0.46, y0 + 0.46, 0);
+        const rad = 7 + H * 0.028;
+        const sg = ctx.createRadialGradient(g0.x, g0.y, 0.4, g0.x + 1.5, g0.y + 2.5, rad);
+        sg.addColorStop(0, "rgba(0,0,0,0.34)");
+        sg.addColorStop(0.5, "rgba(0,0,0,0.1)");
+        sg.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = sg;
+        ctx.beginPath();
+        ctx.ellipse(g0.x + 1.5, g0.y + 2.5, rad * 1.05, rad * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function mixHex(hex, m) {
+        // accepts #rrggbb or rgb()
+        if (hex.startsWith("rgb")) {
+          const m2 = hex.match(/[\d.]+/g);
+          if (!m2) return hex;
+          const r = Math.min(255, Math.round(+m2[0] * m));
+          const g = Math.min(255, Math.round(+m2[1] * m));
+          const b = Math.min(255, Math.round(+m2[2] * m));
+          return `rgb(${r},${g},${b})`;
+        }
+        const n = parseInt(hex.slice(1), 16);
+        const r = Math.min(255, Math.round(((n >> 16) & 255) * m));
+        const g = Math.min(255, Math.round(((n >> 8) & 255) * m));
+        const b = Math.min(255, Math.round((n & 255) * m));
+        return `rgb(${r},${g},${b})`;
+      }
+
+      const face = (idxs, fill, edgeA, verticalShade) => {
+        ctx.beginPath();
+        idxs.forEach((i, n) => {
+          const p = corners[i];
+          n ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+        });
+        ctx.closePath();
+        if (verticalShade && F.fogMaterials && !bloomPass) {
+          // refined isometric craft: lighter near roof, denser at plinth
+          const ys = idxs.map((i) => corners[i].y);
+          const yMin = Math.min(...ys), yMax = Math.max(...ys);
+          const xs = idxs.map((i) => corners[i].x);
+          const xMid = (Math.min(...xs) + Math.max(...xs)) / 2;
+          const grad = ctx.createLinearGradient(xMid, yMin, xMid, yMax);
+          grad.addColorStop(0, mixHex(fill, 1.08));
+          grad.addColorStop(0.55, fill);
+          grad.addColorStop(1, mixHex(fill, 0.78));
+          ctx.fillStyle = grad;
+        } else {
+          ctx.fillStyle = fill;
+        }
+        ctx.fill();
+        if (F.fogMaterials && !bloomPass) {
+          ctx.strokeStyle = `rgba(0,0,0,${edgeA == null ? 0.22 : edgeA})`;
+          ctx.lineWidth = 0.65;
+          ctx.stroke();
+        }
+      };
+
+      // Directional key light from northwest — clearer massing as you orbit
+      const light = 0.5 + 0.5 * Math.cos(angle + 0.9);
+      const shadeL = 0.9 + light * 0.16;
+      const shadeR = 0.72 + (1 - light) * 0.18;
+      const shadeT = 1.06;
+
+      function shadeHex(hex, m) {
+        return mixHex(hex, m);
+      }
+
+      let top, left, right;
+      if (flags.you) {
+        // restrained cyan stone — identity without plastic sheen
+        top = shadeHex("#b8dcec", shadeT);
+        left = shadeHex("#3d8aab", shadeL);
+        right = shadeHex("#1c4e68", shadeR);
+      } else if (flags.club || v >= 50) {
+        top = shadeHex("#e8d498", shadeT);
+        left = shadeHex("#b88828", shadeL);
+        right = shadeHex("#6e4610", shadeR);
+      } else {
+        // limestone → warm ash by value (matte architecture; clearer L/R faces)
+        const t = 0.2 + (Math.log10(v + 1) / Math.log10(maxV + 1)) * 0.52;
+        const L = 92 + t * 82;
+        top = `rgb(${Math.round(L * 0.97 * shadeT)},${Math.round(L * 0.92 * shadeT)},${Math.round(L * 0.84 * shadeT)})`;
+        left = `rgb(${Math.round(L * 0.72 * shadeL)},${Math.round(L * 0.68 * shadeL)},${Math.round(L * 0.6 * shadeL)})`;
+        right = `rgb(${Math.round(L * 0.46 * shadeR)},${Math.round(L * 0.43 * shadeR)},${Math.round(L * 0.38 * shadeR)})`;
+      }
+
+      if (bloomPass) {
+        if (!(flags.you || flags.club || v >= 50)) return;
+        ctx.globalCompositeOperation = "lighter";
+        face([4, 5, 6, 7], flags.you ? "rgba(110,200,230,0.28)" : "rgba(230,190,90,0.22)");
+        face([0, 1, 5, 4], flags.you ? "rgba(60,150,200,0.08)" : "rgba(200,140,50,0.06)");
+        ctx.globalCompositeOperation = "source-over";
+        return;
+      }
+
+      // plinth first — short stone base, miniature diorama craft
+      {
+        const saved = corners.slice();
+        for (let i = 0; i < 8; i++) corners[i] = plinth[i];
+        const pTop = mixHex("#3c3832", 0.96);
+        const pL = mixHex("#2c2824", shadeL * 0.92);
+        const pR = mixHex("#1c1a18", shadeR * 0.92);
+        face([0, 1, 5, 4], pL, 0.28, false);
+        face([1, 2, 6, 5], pR, 0.34, false);
+        face([4, 5, 6, 7], pTop, 0.2, false);
+        // plinth top rim hairline
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(plinth[4].x, plinth[4].y);
+        ctx.lineTo(plinth[5].x, plinth[5].y);
+        ctx.lineTo(plinth[6].x, plinth[6].y);
+        ctx.lineTo(plinth[7].x, plinth[7].y);
+        ctx.closePath();
+        ctx.stroke();
+        for (let i = 0; i < 8; i++) corners[i] = saved[i];
+      }
+
+      face([0, 1, 5, 4], left, 0.2, true);
+      face([1, 2, 6, 5], right, 0.28, true);
+      face([4, 5, 6, 7], top, 0.12, false);
+
+      // vertical massing seam — left/right face join (architecture, not FX)
+      if (F.fogMaterials && H > 12 && !bloomPass) {
+        ctx.strokeStyle = "rgba(0,0,0,0.28)";
+        ctx.lineWidth = 0.85;
+        ctx.beginPath();
+        ctx.moveTo(corners[1].x, corners[1].y);
+        ctx.lineTo(corners[5].x, corners[5].y);
+        ctx.stroke();
+        // soft highlight on leading edge
+        ctx.strokeStyle = "rgba(255,255,255,0.07)";
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(corners[0].x, corners[0].y);
+        ctx.lineTo(corners[4].x, corners[4].y);
+        ctx.stroke();
+      }
+
+      // quiet roof ridge line — craft, not glow
+      if (F.fogMaterials && H > 14) {
+        const t0 = corners[4], t1 = corners[5];
+        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(t0.x, t0.y);
+        ctx.lineTo(t1.x, t1.y);
+        ctx.stroke();
+      }
+
+      // massing setbacks — base / shaft / crown craft (not FX)
+      if (H > 32 && !bloomPass) {
+        const tall = H > 48;
+        const inset = tall ? 0.14 : 0.1;
+        const midZ = ph + (H - ph) * (tall ? 0.56 : 0.62);
+        const ux0 = x0 + inset, uy0 = y0 + inset, ub = base - inset * 2;
+        const upper = [
+          [ux0, uy0, midZ], [ux0 + ub, uy0, midZ], [ux0 + ub, uy0 + ub, midZ], [ux0, uy0 + ub, midZ],
+          [ux0, uy0, H], [ux0 + ub, uy0, H], [ux0 + ub, uy0 + ub, H], [ux0, uy0 + ub, H],
+        ].map(([x, y, z]) => project(x, y, z));
+        const saved = corners.slice();
+        for (let i = 0; i < 8; i++) corners[i] = upper[i];
+        face([0, 1, 5, 4], mixHex(left, 1.05), 0.18, true);
+        face([1, 2, 6, 5], mixHex(right, 1.03), 0.24, true);
+        face([4, 5, 6, 7], mixHex(top, 1.03), 0.1, false);
+        // terrace ring at setback
+        ctx.strokeStyle = "rgba(0,0,0,0.28)";
+        ctx.lineWidth = 0.75;
+        ctx.beginPath();
+        ctx.moveTo(upper[0].x, upper[0].y);
+        ctx.lineTo(upper[1].x, upper[1].y);
+        ctx.lineTo(upper[2].x, upper[2].y);
+        ctx.lineTo(upper[3].x, upper[3].y);
+        ctx.closePath();
+        ctx.stroke();
+        // quiet cornice on specials
+        if (flags.you || flags.club || v >= 50) {
+          ctx.strokeStyle = flags.you ? "rgba(180,220,235,0.2)" : "rgba(230,200,130,0.18)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        for (let i = 0; i < 8; i++) corners[i] = saved[i];
+      }
+
+      // façade craft — floor bands + regular window grid (matte, not sparkle)
+      if (F.windows && H > 18 && !bloomPass) {
+        const seed = (c * 17 + r * 31 + Math.floor(v)) % 97;
+        const facePts = [corners[0], corners[1], corners[5], corners[4]];
+        const cols = H > 40 ? 4 : 3;
+        const maxV0 = H > 48 ? 0.48 : H > 32 ? 0.58 : 0.78;
+        const floors = Math.min(9, Math.max(2, Math.floor(H / 11)));
+        const winW = H > 40 ? 1.3 : 1.5;
+        const winH = H > 40 ? 1.75 : 2.0;
+        // horizontal floor lines — architectural structure without glow
+        if (H > 24) {
+          ctx.save();
+          ctx.strokeStyle = flags.you
+            ? "rgba(80,130,150,0.12)"
+            : flags.club || v >= 50
+              ? "rgba(90,70,30,0.14)"
+              : "rgba(0,0,0,0.16)";
+          ctx.lineWidth = 0.6;
+          for (let fl = 1; fl < floors; fl++) {
+            const vLine = 0.14 + fl * ((maxV0 - 0.14) / Math.max(1, floors));
+            const a = {
+              x: facePts[0].x * (1 - 0.12) * (1 - vLine) + facePts[1].x * 0.12 * (1 - vLine) + facePts[2].x * 0.12 * vLine + facePts[3].x * (1 - 0.12) * vLine,
+              y: facePts[0].y * (1 - 0.12) * (1 - vLine) + facePts[1].y * 0.12 * (1 - vLine) + facePts[2].y * 0.12 * vLine + facePts[3].y * (1 - 0.12) * vLine,
+            };
+            const b = {
+              x: facePts[0].x * (1 - 0.88) * (1 - vLine) + facePts[1].x * 0.88 * (1 - vLine) + facePts[2].x * 0.88 * vLine + facePts[3].x * (1 - 0.88) * vLine,
+              y: facePts[0].y * (1 - 0.88) * (1 - vLine) + facePts[1].y * 0.88 * (1 - vLine) + facePts[2].y * 0.88 * vLine + facePts[3].y * (1 - 0.88) * vLine,
+            };
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+          // sparse vertical mullions
+          ctx.strokeStyle = flags.you
+            ? "rgba(60,110,130,0.1)"
+            : "rgba(0,0,0,0.12)";
+          for (let col = 1; col < cols; col++) {
+            const u = 0.16 + col * (0.68 / Math.max(1, cols));
+            const top = {
+              x: facePts[0].x * (1 - u) * (1 - 0.12) + facePts[1].x * u * (1 - 0.12) + facePts[2].x * u * 0.12 + facePts[3].x * (1 - u) * 0.12,
+              y: facePts[0].y * (1 - u) * (1 - 0.12) + facePts[1].y * u * (1 - 0.12) + facePts[2].y * u * 0.12 + facePts[3].y * (1 - u) * 0.12,
+            };
+            const bot = {
+              x: facePts[0].x * (1 - u) * (1 - maxV0) + facePts[1].x * u * (1 - maxV0) + facePts[2].x * u * maxV0 + facePts[3].x * (1 - u) * maxV0,
+              y: facePts[0].y * (1 - u) * (1 - maxV0) + facePts[1].y * u * (1 - maxV0) + facePts[2].y * u * maxV0 + facePts[3].y * (1 - u) * maxV0,
+            };
+            ctx.beginPath();
+            ctx.moveTo(top.x, top.y);
+            ctx.lineTo(bot.x, bot.y);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+        for (let row = 0; row < floors; row++) {
+          for (let col = 0; col < cols; col++) {
+            // rare empty pane — mostly regular grid
+            if ((seed + row * 5 + col * 2) % 19 === 0) continue;
+            const u = 0.16 + col * (0.68 / Math.max(1, cols - 1));
+            const v0 = 0.14 + row * ((maxV0 - 0.14) / Math.max(1, floors - 1));
+            const px =
+              facePts[0].x * (1 - u) * (1 - v0) +
+              facePts[1].x * u * (1 - v0) +
+              facePts[2].x * u * v0 +
+              facePts[3].x * (1 - u) * v0;
+            const py =
+              facePts[0].y * (1 - u) * (1 - v0) +
+              facePts[1].y * u * (1 - v0) +
+              facePts[2].y * u * v0 +
+              facePts[3].y * (1 - u) * v0;
+            // mostly unlit matte panes; very few soft lights
+            const lit = (seed + row * 3 + col) % 9 === 0;
+            ctx.fillStyle = flags.you
+              ? lit
+                ? "rgba(140,205,225,0.18)"
+                : "rgba(28,56,72,0.24)"
+              : flags.club || v >= 50
+                ? lit
+                  ? "rgba(255,230,180,0.1)"
+                  : "rgba(28,20,10,0.22)"
+                : lit
+                  ? "rgba(255,240,210,0.08)"
+                  : "rgba(16,14,12,0.2)";
+            ctx.fillRect(px - winW / 2, py - winH / 2, winW, winH);
+          }
+        }
+      }
+
+      // restrained roof specular — matte stone sheen only (not glass sparkle)
+      if (F.specular && H > 16) {
+        const t0 = corners[4], t1 = corners[5], t2 = corners[6], t3 = corners[7];
+        const mx = (t0.x + t1.x + t2.x + t3.x) / 4;
+        const my = (t0.y + t1.y + t2.y + t3.y) / 4;
+        const sp = ctx.createRadialGradient(mx - 1.5, my - 1.5, 0, mx, my, 8);
+        const peak = flags.you || flags.club || v >= 50 ? 0.1 : 0.06;
+        sp.addColorStop(0, `rgba(255,255,255,${peak})`);
+        sp.addColorStop(0.55, "rgba(255,255,255,0.02)");
+        sp.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = sp;
+        ctx.beginPath();
+        ctx.moveTo(t0.x, t0.y); ctx.lineTo(t1.x, t1.y); ctx.lineTo(t2.x, t2.y); ctx.lineTo(t3.x, t3.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // hairline crown edge for specials — identity without bloom
+      if ((flags.you || flags.club || v >= 50) && F.fogMaterials && H > 10) {
+        ctx.strokeStyle = flags.you ? "rgba(160,220,240,0.28)" : "rgba(230,200,120,0.26)";
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.moveTo(corners[4].x, corners[4].y);
+        ctx.lineTo(corners[5].x, corners[5].y);
+        ctx.lineTo(corners[6].x, corners[6].y);
+        ctx.lineTo(corners[7].x, corners[7].y);
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      // optional whale shaft — kept off by default
+      if (F.lightShaft && (flags.club || v >= 50)) {
+        const topY = Math.min(corners[4].y, corners[5].y, corners[6].y, corners[7].y);
+        const cx = (corners[4].x + corners[6].x) / 2;
+        const shaft = ctx.createLinearGradient(cx, topY - 120, cx, topY);
+        shaft.addColorStop(0, "rgba(255,200,80,0)");
+        shaft.addColorStop(1, "rgba(255,210,100,0.08)");
+        ctx.fillStyle = shaft;
+        ctx.beginPath();
+        ctx.moveTo(cx - 16, topY - 120);
+        ctx.lineTo(cx + 16, topY - 120);
+        ctx.lineTo(cx + 8, topY);
+        ctx.lineTo(cx - 8, topY);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      if (isoValueLabels.has(flags) && localRise > 0.82) {
+        const topY = Math.min(corners[4].y, corners[5].y, corners[6].y, corners[7].y);
+        const cx = (corners[4].x + corners[6].x) / 2;
+        const label = v >= 100 ? "$" + Math.round(v) + "M" : "$" + (v % 1 ? v.toFixed(1) : v) + "M";
+        const tag = flags.you ? "YOU" : (flags.club || v >= 50 ? "$50M" : "");
+        isoLabelJobs.push({
+          x: Math.min(canvas.clientWidth - 48, Math.max(48, cx)),
+          y: Math.max(16, topY - 12),
+          text: label,
+          tag,
+          color: flags.you ? "#b8e4f4" : flags.club || v >= 50 ? "#edd9a0" : "rgba(236,228,214,0.88)",
+          priority: flags.you ? 1e9 : v,
+          alpha: Math.min(1, (localRise - 0.82) / 0.18) * (tag ? 1 : 0.92),
+          quiet: !tag,
+        });
+      }
+    }
+
+    let isoValueLabels = new Set();
+
+    let isoLabelJobs = [];
+
+    function flushIsoLabels() {
+      if (!isoLabelJobs.length) return;
+      isoLabelJobs.sort((a, b) => b.priority - a.priority);
+      const placed = [];
+      const W = canvas.clientWidth;
+      ctx.font = "700 12px Barlow Condensed, sans-serif";
+      isoLabelJobs.forEach((job) => {
+        const isSpecial = job.tag === "YOU" || job.tag === "$50M";
+        // measure actual plate footprint so collision uses real bounds
+        let needW, needH;
+        if (isSpecial) {
+          ctx.font = "700 8px Libre Franklin, sans-serif";
+          const tagW = ctx.measureText(job.tag).width;
+          ctx.font = "700 12px Barlow Condensed, sans-serif";
+          const valW = ctx.measureText(job.text).width;
+          needW = Math.max(tagW, valW) + 16;
+          needH = 28;
+        } else if (job.quiet) {
+          ctx.font = "600 11px Barlow Condensed, sans-serif";
+          needW = ctx.measureText(job.text).width + 12;
+          needH = 15;
+        } else {
+          ctx.font = "700 12px Barlow Condensed, sans-serif";
+          needW = ctx.measureText(job.text).width + 14;
+          needH = 18;
+        }
+        const baseX = job.x - needW / 2;
+        const baseY = job.y - (isSpecial ? 18 : 12);
+        let box = null;
+        // cascade: up, side, down — specials get more tries
+        const steps = isSpecial ? 9 : 6;
+        const offsets = [];
+        for (let n = 0; n < steps; n++) {
+          offsets.push({ dx: 0, dy: -n * 16 });
+          offsets.push({ dx: 14, dy: -n * 13 });
+          offsets.push({ dx: -14, dy: -n * 13 });
+          if (n > 0) {
+            offsets.push({ dx: 22, dy: -n * 8 });
+            offsets.push({ dx: -22, dy: -n * 8 });
+          }
+        }
+        offsets.push({ dx: 0, dy: 18 }, { dx: 16, dy: 14 }, { dx: -16, dy: 14 });
+        for (let i = 0; i < offsets.length; i++) {
+          const test = {
+            x: Math.max(4, Math.min(W - needW - 4, baseX + offsets[i].dx)),
+            y: Math.max(4, Math.min(CSS_H - needH - 4, baseY + offsets[i].dy)),
+            w: needW,
+            h: needH,
+          };
+          if (!placed.some((p) => rectsOverlap(p, test, 4))) {
+            box = test;
+            break;
+          }
+        }
+        if (!box) return;
+        placed.push(box);
+        ctx.save();
+        ctx.globalAlpha = job.alpha == null ? 1 : job.alpha;
+        const lx = box.x + box.w / 2;
+        if (isSpecial) {
+          const tag = job.tag;
+          const bw = box.w;
+          const bh = box.h;
+          const bx = box.x;
+          const by = box.y;
+          ctx.fillStyle = "rgba(8,7,6,0.58)";
+          const r = 4;
+          ctx.beginPath();
+          ctx.moveTo(bx + r, by);
+          ctx.arcTo(bx + bw, by, bx + bw, by + bh, r);
+          ctx.arcTo(bx + bw, by + bh, bx, by + bh, r);
+          ctx.arcTo(bx, by + bh, bx, by, r);
+          ctx.arcTo(bx, by, bx + bw, by, r);
+          ctx.closePath();
+          ctx.fill();
+          ctx.textAlign = "center";
+          ctx.font = "700 8px Libre Franklin, sans-serif";
+          ctx.fillStyle = tag === "YOU" ? "rgba(184,228,244,0.85)" : "rgba(237,217,160,0.85)";
+          ctx.fillText(tag, bx + bw / 2, by + 10);
+          ctx.font = "700 12px Barlow Condensed, sans-serif";
+          ctx.fillStyle = job.color;
+          ctx.fillText(job.text, bx + bw / 2, by + 22);
+        } else if (job.quiet) {
+          const bw = box.w;
+          const bh = box.h;
+          const bx = box.x;
+          const by = box.y;
+          ctx.fillStyle = "rgba(8,7,6,0.42)";
+          const r = 3;
+          ctx.beginPath();
+          ctx.moveTo(bx + r, by);
+          ctx.arcTo(bx + bw, by, bx + bw, by + bh, r);
+          ctx.arcTo(bx + bw, by + bh, bx, by + bh, r);
+          ctx.arcTo(bx, by + bh, bx, by, r);
+          ctx.arcTo(bx, by, bx + bw, by, r);
+          ctx.closePath();
+          ctx.fill();
+          ctx.textAlign = "center";
+          ctx.font = "600 11px Barlow Condensed, sans-serif";
+          ctx.fillStyle = job.color;
+          ctx.fillText(job.text, bx + bw / 2, by + 11);
+        } else {
+          drawLabel(lx, box.y + 13, job.text, job.color);
+        }
+        ctx.restore();
+      });
+      isoLabelJobs = [];
+    }
+
+    function drawIso() {
+      const w = canvas.clientWidth;
+      const h = CSS_H;
+      isoLabelJobs = [];
+      // value labels: specials always + top mid towers (restrained hierarchy)
+      {
+        const maxV0 = Math.max(...current.lots.map((l) => l.v));
+        const ranked = [...current.lots].sort((a, b) => b.v - a.v);
+        isoValueLabels = new Set();
+        let midN = 0;
+        ranked.forEach((l) => {
+          if (l.you || l.club || l.v >= 50) isoValueLabels.add(l);
+          else if (midN < 2 && l.v >= Math.max(5, maxV0 * 0.04)) {
+            // only top mids — fewer collisions, clearer hierarchy
+            isoValueLabels.add(l);
+            midN++;
+          }
+        });
+      }
+      ctx.clearRect(0, 0, w, h);
+
+      if (F.fogMaterials) {
+        // atmosphere: cooler sky, warm plinth haze — print diorama, no god-rays
+        const sky = ctx.createLinearGradient(0, 0, 0, h);
+        sky.addColorStop(0, "#080a0f");
+        sky.addColorStop(0.4, "#0b0a09");
+        sky.addColorStop(0.68, "#100e0b");
+        sky.addColorStop(1, "#060504");
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, w, h);
+        // soft horizon band — stages the model without glow
+        const hz = ctx.createLinearGradient(0, h * 0.5, 0, h * 0.88);
+        hz.addColorStop(0, "rgba(18,16,14,0)");
+        hz.addColorStop(0.45, "rgba(28,24,20,0.18)");
+        hz.addColorStop(1, "rgba(8,6,5,0.42)");
+        ctx.fillStyle = hz;
+        ctx.fillRect(0, 0, w, h);
+        const bg = ctx.createRadialGradient(w * 0.5, h * 0.62, 20, w * 0.5, h * 0.56, w * 0.52);
+        bg.addColorStop(0, "rgba(28,24,20,0.36)");
+        bg.addColorStop(0.55, "rgba(12,10,8,0.14)");
+        bg.addColorStop(1, "rgba(5,4,3,0)");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+      } else {
+        ctx.fillStyle = "#0a0908";
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      // optional god rays — off by default
+      if (F.godRays) {
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        const gx = w * 0.62, gy = h * 0.08;
+        for (let i = 0; i < 5; i++) {
+          const a = -0.45 + i * 0.18 + idle * 0.01;
+          ctx.fillStyle = `rgba(255,210,150,${0.008 + i * 0.002})`;
+          ctx.beginPath();
+          ctx.moveTo(gx, gy);
+          ctx.lineTo(gx + Math.cos(a) * h * 1.3, gy + Math.sin(a) * h * 1.3);
+          ctx.lineTo(gx + Math.cos(a + 0.06) * h * 1.3, gy + Math.sin(a + 0.06) * h * 1.3);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      const maxV = Math.max(...current.lots.map((l) => l.v));
+      const sorted = [...current.lots].sort((a, b) => project(a.c, a.r, 0).depth - project(b.c, b.r, 0).depth);
+
+      const minC = Math.min(...current.lots.map((l) => l.c)) - 1;
+      const maxC = Math.max(...current.lots.map((l) => l.c)) + 2;
+      const minR = Math.min(...current.lots.map((l) => l.r)) - 1;
+      const maxR = Math.max(...current.lots.map((l) => l.r)) + 2;
+
+      // ground plate — double-edge craft, soft contact shadow (architectural base)
+      {
+        const p00 = project(minC, minR, 0);
+        const p10 = project(maxC, minR, 0);
+        const p11 = project(maxC, maxR, 0);
+        const p01 = project(minC, maxR, 0);
+        // diorama contact shadow under model
+        const cx = (p00.x + p10.x + p11.x + p01.x) / 4;
+        const cy = (p00.y + p10.y + p11.y + p01.y) / 4 + 8;
+        const drop = ctx.createRadialGradient(cx, cy, 6, cx, cy + 10, Math.max(w, h) * 0.32);
+        drop.addColorStop(0, "rgba(0,0,0,0.38)");
+        drop.addColorStop(0.45, "rgba(0,0,0,0.14)");
+        drop.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = drop;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 5, Math.max(w, h) * 0.3, Math.max(w, h) * 0.11, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(p00.x, p00.y);
+        ctx.lineTo(p10.x, p10.y);
+        ctx.lineTo(p11.x, p11.y);
+        ctx.lineTo(p01.x, p01.y);
+        ctx.closePath();
+        const gfill = ctx.createLinearGradient(p00.x, p00.y, p11.x, p11.y);
+        gfill.addColorStop(0, "rgba(44,40,36,0.58)");
+        gfill.addColorStop(0.45, "rgba(28,26,22,0.5)");
+        gfill.addColorStop(1, "rgba(12,10,9,0.58)");
+        ctx.fillStyle = gfill;
+        ctx.fill();
+        // outer hairline (engraved plate edge)
+        ctx.strokeStyle = "rgba(255,255,255,0.09)";
+        ctx.lineWidth = 1.15;
+        ctx.stroke();
+        // inner inset edge
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(p00.x, p00.y);
+        ctx.lineTo(p10.x, p10.y);
+        ctx.lineTo(p11.x, p11.y);
+        ctx.lineTo(p01.x, p01.y);
+        ctx.closePath();
+        ctx.clip();
+        ctx.strokeStyle = "rgba(0,0,0,0.38)";
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+        // quiet second rim — miniature diorama craft
+        ctx.strokeStyle = "rgba(255,255,255,0.035)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(p00.x, p00.y);
+        ctx.lineTo(p10.x, p10.y);
+        ctx.lineTo(p11.x, p11.y);
+        ctx.lineTo(p01.x, p01.y);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // quieter ground grid — structure without noise
+      ctx.strokeStyle = F.fogMaterials ? "rgba(255,255,255,0.022)" : "rgba(255,255,255,0.018)";
+      ctx.lineWidth = 1;
+      for (let g = minC; g <= maxC; g++) {
+        const a = project(g, minR, 0), b = project(g, maxR, 0);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+      for (let g = minR; g <= maxR; g++) {
+        const a = project(minC, g, 0), b = project(maxC, g, 0);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+
+      // lot pads — footprint + micro street gutter (city-block craft)
+      sorted.forEach((l) => {
+        const base = 0.88; // leave 0.12 street band between lots
+        const ox = 0.02, oy = 0.02;
+        const pad = [
+          project(l.c + ox, l.r + oy, 0),
+          project(l.c + ox + base, l.r + oy, 0),
+          project(l.c + ox + base, l.r + oy + base, 0),
+          project(l.c + ox, l.r + oy + base, 0),
+        ];
+        ctx.beginPath();
+        pad.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.closePath();
+        if (l.you) ctx.fillStyle = "rgba(110,200,230,0.09)";
+        else if (l.club || l.v >= 50) ctx.fillStyle = "rgba(224,176,74,0.08)";
+        else ctx.fillStyle = "rgba(255,255,255,0.028)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,0.22)";
+        ctx.lineWidth = 0.65;
+        ctx.stroke();
+        // hairline curb
+        ctx.strokeStyle = "rgba(255,255,255,0.04)";
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      });
+
+      sorted.forEach((l) => {
+        if (F.depthFog) {
+          const d = project(l.c, l.r, 0).depth;
+          const t = Math.min(1, Math.max(0, (d + 4) / 14));
+          // atmospheric recession — far street softens, specials stay clear
+          let a = 0.74 + (1 - t) * 0.26;
+          if (l.you || l.club || l.v >= 50) a = Math.min(1, a + 0.1);
+          ctx.globalAlpha = a;
+        }
+        drawBuilding(l.c, l.r, l.v, l, maxV, false);
+        ctx.globalAlpha = 1;
+      });
+
+      if (F.bloom) {
+        // bloom pass should not re-queue labels
+        const saved = isoLabelJobs;
+        isoLabelJobs = [];
+        ctx.save();
+        ctx.filter = "blur(6px)";
+        ctx.globalAlpha = 0.45;
+        sorted.forEach((l) => drawBuilding(l.c, l.r, l.v, l, maxV, true));
+        ctx.filter = "none";
+        ctx.globalAlpha = 1;
+        ctx.restore();
+        isoLabelJobs = [];
+        sorted.forEach((l) => {
+          if (l.you || l.club || l.v >= 50) drawBuilding(l.c, l.r, l.v, l, maxV, false);
+        });
+        isoLabelJobs = saved;
+      }
+
+      flushIsoLabels();
+
+      if (F.dust) {
+        dust.forEach((d) => {
+          d.z += d.v * 0.25;
+          if (d.z > 90) d.z = 0;
+          const p = project(d.x, d.y, d.z * rise);
+          const a = 0.06 + (d.z / 90) * 0.14;
+          ctx.fillStyle = `rgba(255,235,200,${a})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 0.9, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      if (F.fogMaterials) {
+        // soft edge falloff — print mat, not cinematic smoke
+        const vg = ctx.createRadialGradient(w / 2, h * 0.48, h * 0.26, w / 2, h * 0.5, h * 0.9);
+        vg.addColorStop(0, "rgba(0,0,0,0)");
+        vg.addColorStop(0.7, "rgba(0,0,0,0.1)");
+        vg.addColorStop(1, "rgba(0,0,0,0.32)");
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, w, h);
+      }
+    }
+
+    /**
+     * Dark-bg multi-hue sequential (cartography + plasma restraint):
+     * ink → indigo → teal → moss → sand → copper.
+     * Lightness rises with value; mid hues open so $5–30M lots don't collapse.
+     * Not FLIR neon — matte print heat.
+     */
+    function thermalRGB(v, maxV) {
+      let t = Math.min(1, Math.max(0, Math.log10(v + 1) / Math.log10(maxV + 1)));
+      // mild gamma: open mids without washing whales
+      t = Math.pow(t, 0.68);
+      // multi-hue sequential — mid lightness stepped up for dark-bg legibility
+      const stops = [
+        { t: 0, r: 16, g: 20, b: 38 },
+        { t: 0.1, r: 30, g: 40, b: 78 },
+        { t: 0.2, r: 32, g: 60, b: 108 },
+        { t: 0.3, r: 34, g: 90, b: 118 },
+        { t: 0.4, r: 40, g: 122, b: 108 },
+        { t: 0.5, r: 56, g: 138, b: 88 },
+        { t: 0.58, r: 82, g: 146, b: 70 },
+        { t: 0.66, r: 114, g: 150, b: 56 },
+        { t: 0.74, r: 150, g: 148, b: 50 },
+        { t: 0.82, r: 180, g: 140, b: 48 },
+        { t: 0.91, r: 206, g: 124, b: 44 },
+        { t: 1, r: 220, g: 108, b: 40 },
+      ];
+      let i = 0;
+      while (i < stops.length - 2 && t > stops[i + 1].t) i++;
+      const a = stops[i], b = stops[i + 1];
+      const u = (t - a.t) / Math.max(1e-6, b.t - a.t);
+      // smoothstep for cleaner mid transitions (less banding)
+      const s = u * u * (3 - 2 * u);
+      const r = a.r + (b.r - a.r) * s;
+      const g = a.g + (b.g - a.g) * s;
+      const bl = a.b + (b.b - a.b) * s;
+      const lr = Math.min(255, r + 28), lg = Math.min(255, g + 22), lb = Math.min(255, bl + 16);
+      return {
+        t,
+        fill: `rgb(${r|0},${g|0},${bl|0})`,
+        light: `rgb(${lr|0},${lg|0},${lb|0})`,
+        dark: `rgb(${(r * 0.66)|0},${(g * 0.66)|0},${(bl * 0.66)|0})`,
+      };
+    }
+
+    /**
+     * Squarified treemap (Bruls et al.) — area ∝ value, aspect ratios near 1.
+     * Hierarchical carve for skewed blocks: dominant lots get a clean slab first,
+     * remaining neighborhood packs into the complement (reads as map, not confetti).
+     * District frames follow NN/G: distinct borders around top-level groups.
+     */
+    function layoutTreemap(items, x, y, w, h) {
+      thermalDistricts = [];
+      if (!items.length || w < 0.5 || h < 0.5) return [];
+      const gap = 4.5; // street gutters — intentional map structure (NNGroup hierarchy)
+      const total = items.reduce((s, l) => s + Math.max(l.v, 0.01), 0);
+      const sorted = [...items].sort((a, b) => b.v - a.v);
+      const topShare = sorted[0].v / total;
+
+      // Extreme skew (e.g. midtown whale): carve primary slab, pack rest as district
+      if (sorted.length >= 4 && topShare >= 0.32) {
+        const major = [];
+        let majorSum = 0;
+        for (let i = 0; i < sorted.length; i++) {
+          const next = majorSum + sorted[i].v;
+          // take consecutive top lots until ~62–75% or 3 slabs — keep rest as neighborhood
+          if (i > 0 && (majorSum / total >= 0.55 || major.length >= 3)) break;
+          if (i > 0 && sorted[i].v / total < 0.06 && majorSum / total >= 0.4) break;
+          major.push(sorted[i]);
+          majorSum = next;
+        }
+        if (major.length && major.length < sorted.length) {
+          const rest = sorted.filter((l) => !major.includes(l));
+          const majorFrac = majorSum / total;
+          const restFrac = 1 - majorFrac;
+          const gutter = gap + 3.5; // wider district street
+          let majorBox, restBox;
+          if (w >= h) {
+            // vertical split — major on the left (editorial lead)
+            const mw = Math.max(48, (w - gutter) * majorFrac);
+            majorBox = { x, y, w: mw, h };
+            restBox = { x: x + mw + gutter, y, w: Math.max(8, w - mw - gutter), h };
+          } else {
+            const mh = Math.max(40, (h - gutter) * majorFrac);
+            majorBox = { x, y, w, h: mh };
+            restBox = { x, y: y + mh + gutter, w, h: Math.max(8, h - mh - gutter) };
+          }
+          thermalDistricts = [
+            {
+              kind: "lead",
+              x: majorBox.x - 1.5,
+              y: majorBox.y - 1.5,
+              w: majorBox.w + 3,
+              h: majorBox.h + 3,
+              share: majorFrac,
+              label: null,
+            },
+            {
+              kind: "rest",
+              x: restBox.x - 1.5,
+              y: restBox.y - 1.5,
+              w: restBox.w + 3,
+              h: restBox.h + 3,
+              share: restFrac,
+              label: "Rest of block",
+            },
+          ];
+          return layoutTreemapFlat(major, majorBox.x, majorBox.y, majorBox.w, majorBox.h, gap).concat(
+            layoutTreemapFlat(rest, restBox.x, restBox.y, restBox.w, restBox.h, Math.max(2.5, gap - 0.5))
+          );
+        }
+      }
+      return layoutTreemapFlat(sorted, x, y, w, h, gap);
+    }
+
+    function layoutTreemapFlat(items, x, y, w, h, gap) {
+      if (!items.length || w < 0.5 || h < 0.5) return [];
+      const total = items.reduce((s, l) => s + Math.max(l.v, 0.01), 0);
+      const scale = (w * h) / total;
+      const nodes = items.map((lot) => ({ lot, area: Math.max(lot.v, 0.01) * scale }));
+      return squarify(nodes, [], x, y, w, h, gap);
+    }
+
+    function roundRectPath(x, y, w, h, r) {
+      const rr = Math.min(r, w * 0.5, h * 0.5);
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(x, y, w, h, rr);
+        return;
+      }
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+
+    function worstAspect(row, side) {
+      if (!row.length || side <= 0) return Infinity;
+      let s = 0, rMax = 0, rMin = Infinity;
+      for (let i = 0; i < row.length; i++) {
+        const a = row[i].area;
+        s += a;
+        if (a > rMax) rMax = a;
+        if (a < rMin) rMin = a;
+      }
+      if (s <= 0 || rMin <= 0) return Infinity;
+      const s2 = s * s;
+      const w2 = side * side;
+      return Math.max((w2 * rMax) / s2, s2 / (w2 * rMin));
+    }
+
+    function layoutRow(row, x, y, w, h, gap) {
+      if (!row.length) return { rects: [], x, y, w, h };
+      const s = row.reduce((a, n) => a + n.area, 0);
+      const rects = [];
+      const n = row.length;
+      const gaps = Math.max(0, n - 1) * gap;
+
+      if (w >= h) {
+        // row fills a vertical strip on the left
+        let stripW = Math.max(4, s / h);
+        stripW = Math.min(stripW, Math.max(4, w - 4));
+        let yy = y;
+        const avail = Math.max(1, h - gaps);
+        for (let i = 0; i < n; i++) {
+          const rh = Math.max(3, (row[i].area / s) * avail);
+          rects.push({ lot: row[i].lot, x, y: yy, w: stripW, h: rh });
+          yy += rh + gap;
+        }
+        const used = stripW + (w > stripW + gap ? gap : 0);
+        return { rects, x: x + used, y, w: Math.max(0, w - used), h };
+      }
+      // row fills a horizontal strip on the top
+      let stripH = Math.max(4, s / w);
+      stripH = Math.min(stripH, Math.max(4, h - 4));
+      let xx = x;
+      const avail = Math.max(1, w - gaps);
+      for (let i = 0; i < n; i++) {
+        const rw = Math.max(3, (row[i].area / s) * avail);
+        rects.push({ lot: row[i].lot, x: xx, y, w: rw, h: stripH });
+        xx += rw + gap;
+      }
+      const used = stripH + (h > stripH + gap ? gap : 0);
+      return { rects, x, y: y + used, w, h: Math.max(0, h - used) };
+    }
+
+    function squarify(children, row, x, y, w, h, gap) {
+      if (w < 1 || h < 1) {
+        // collapse leftovers into remaining box so no lot is dropped
+        if (!children.length && !row.length) return [];
+        const all = row.concat(children);
+        if (all.length === 1) {
+          return [{ lot: all[0].lot, x, y, w: Math.max(w, 3), h: Math.max(h, 3) }];
+        }
+        // fallback slice in leftover sliver
+        const total = all.reduce((s, n) => s + n.area, 0) || 1;
+        const out = [];
+        if (w >= h) {
+          let xx = x;
+          all.forEach((n) => {
+            const rw = Math.max(2, (n.area / total) * w);
+            out.push({ lot: n.lot, x: xx, y, w: rw, h: Math.max(h, 3) });
+            xx += rw;
+          });
+        } else {
+          let yy = y;
+          all.forEach((n) => {
+            const rh = Math.max(2, (n.area / total) * h);
+            out.push({ lot: n.lot, x, y: yy, w: Math.max(w, 3), h: rh });
+            yy += rh;
+          });
+        }
+        return out;
+      }
+
+      if (!children.length) {
+        return layoutRow(row, x, y, w, h, gap).rects;
+      }
+
+      const c = children[0];
+      const side = Math.min(w, h);
+      const row2 = row.concat([c]);
+
+      if (!row.length || worstAspect(row, side) >= worstAspect(row2, side)) {
+        return squarify(children.slice(1), row2, x, y, w, h, gap);
+      }
+      const laid = layoutRow(row, x, y, w, h, gap);
+      return laid.rects.concat(squarify(children, [], laid.x, laid.y, laid.w, laid.h, gap));
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+    }
+    function easeOutQuart(t) {
+      const u = 1 - Math.min(1, Math.max(0, t));
+      return 1 - u * u * u * u;
+    }
+
+    function fmtMoney(v) {
+      if (v >= 100) return "$" + Math.round(v) + "M";
+      if (v >= 10) return "$" + v.toFixed(0) + "M";
+      return "$" + v.toFixed(1) + "M";
+    }
+
+    function rectsOverlap(a, b, pad) {
+      return !(
+        a.x + a.w + pad < b.x ||
+        b.x + b.w + pad < a.x ||
+        a.y + a.h + pad < b.y ||
+        b.y + b.h + pad < a.y
+      );
+    }
+
+    /**
+     * Thermal: MAP ONLY on canvas.
+     * Toolbar + legend are HTML outside the canvas — never draw chrome here.
+     * Craft: matte cells, soft bevel, staggered reveal — no glow / scan gimmicks.
+     */
+    function drawThermal() {
+      const w = canvas.clientWidth;
+      const h = CSS_H;
+      ctx.clearRect(0, 0, w, h);
+
+      const bg = ctx.createRadialGradient(w * 0.48, h * 0.38, 8, w * 0.5, h * 0.5, w * 0.72);
+      bg.addColorStop(0, "#0c121c");
+      bg.addColorStop(1, "#05070c");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      const maxV = Math.max(...current.lots.map((l) => l.v));
+      const totalV = current.lots.reduce((s, l) => s + l.v, 0);
+      const sorted = [...current.lots].sort((a, b) => b.v - a.v);
+
+      const inset = 16;
+      const mapX = inset;
+      const mapY = inset;
+      const mapW = w - inset * 2;
+      const mapH = h - inset * 2;
+
+      // recessed map well — print craft, soft negative space (not chrome)
+      {
+        // outer mat
+        ctx.fillStyle = "rgba(0,0,0,0.38)";
+        roundRectPath(mapX - 6, mapY - 6, mapW + 12, mapH + 12, 8);
+        ctx.fill();
+        // well floor
+        const wellBg = ctx.createLinearGradient(mapX, mapY, mapX, mapY + mapH);
+        wellBg.addColorStop(0, "rgba(8,12,20,0.92)");
+        wellBg.addColorStop(1, "rgba(4,6,10,0.96)");
+        ctx.fillStyle = wellBg;
+        roundRectPath(mapX - 2, mapY - 2, mapW + 4, mapH + 4, 5);
+        ctx.fill();
+        // double hairline frame
+        ctx.strokeStyle = "rgba(255,255,255,0.07)";
+        ctx.lineWidth = 1;
+        roundRectPath(mapX - 5.5, mapY - 5.5, mapW + 11, mapH + 11, 7);
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(0,0,0,0.45)";
+        ctx.lineWidth = 1;
+        roundRectPath(mapX - 2.5, mapY - 2.5, mapW + 5, mapH + 5, 5);
+        ctx.stroke();
+        // soft inner vignette
+        ctx.save();
+        roundRectPath(mapX - 2, mapY - 2, mapW + 4, mapH + 4, 5);
+        ctx.clip();
+        const vig = ctx.createRadialGradient(
+          mapX + mapW * 0.5, mapY + mapH * 0.45, Math.min(mapW, mapH) * 0.2,
+          mapX + mapW * 0.5, mapY + mapH * 0.5, Math.max(mapW, mapH) * 0.62
+        );
+        vig.addColorStop(0, "rgba(0,0,0,0)");
+        vig.addColorStop(1, "rgba(0,0,0,0.28)");
+        ctx.fillStyle = vig;
+        ctx.fillRect(mapX - 2, mapY - 2, mapW + 4, mapH + 4);
+        ctx.restore();
+      }
+
+      const meta = document.getElementById("thermal-meta");
+      if (meta) {
+        meta.textContent =
+          sorted.length + " lots · $" +
+          (totalV >= 100 ? totalV.toFixed(0) : totalV.toFixed(1)) +
+          "M · area ∝ value · hover or tap a lot";
+      }
+
+      if (!F.thermalFill) {
+        let x = mapX;
+        sorted.forEach((l) => {
+          const ww = Math.max(2, (l.v / totalV) * mapW);
+          ctx.fillStyle = l.you ? "#6ed4ff" : thermalRGB(l.v, maxV).fill;
+          ctx.fillRect(x, mapY + mapH * 0.2, ww - 1, mapH * 0.6);
+          x += ww;
+        });
+        return;
+      }
+
+      const cells = layoutTreemap(sorted, mapX, mapY, mapW, mapH);
+      thermalCells = cells;
+      const reveal = F.thermalReveal && !reduceMotion ? easeOutCubic(thermalT) : 1;
+
+      // rank by value for stagger (large lots settle first)
+      const valueRank = new Map(sorted.map((l, i) => [l, i]));
+
+      // focus target for cartographic hierarchy (dim others, not glow self)
+      const focusLot =
+        (hoverCell && hoverCell.lot) ||
+        pinnedLot ||
+        null;
+
+      // street floor under treemap — gutters read as intentional map structure
+      {
+        ctx.save();
+        roundRectPath(mapX, mapY, mapW, mapH, 4);
+        ctx.clip();
+        const street = ctx.createLinearGradient(mapX, mapY, mapX + mapW * 0.3, mapY + mapH);
+        street.addColorStop(0, "rgba(10,14,22,0.98)");
+        street.addColorStop(0.5, "rgba(8,10,16,0.98)");
+        street.addColorStop(1, "rgba(6,8,12,0.98)");
+        ctx.fillStyle = street;
+        ctx.fillRect(mapX, mapY, mapW, mapH);
+        ctx.restore();
+      }
+
+      // cells — cushion treemap craft (van Wijk): matte volume, no glow
+      cells.forEach((cell) => {
+        const l = cell.lot;
+        const x = cell.x;
+        const y = cell.y;
+        const cw = Math.max(0, cell.w);
+        const ch = Math.max(0, cell.h);
+        if (cw < 0.5 || ch < 0.5) return;
+
+        const idx = valueRank.get(l) || 0;
+        const delay = Math.min(0.36, idx * 0.018);
+        const localT = F.thermalReveal && !reduceMotion
+          ? easeOutQuart(Math.max(0, (thermalT - delay) / Math.max(0.32, 1 - delay * 0.5)))
+          : 1;
+        if (localT <= 0.01) return;
+
+        const isFocus = focusLot && focusLot === l;
+        const dimOthers = focusLot && !isFocus;
+
+        ctx.save();
+        // hierarchy: slight de-emphasis only — keep map readable (was too muddy)
+        let baseA = 0.22 + localT * 0.78;
+        if (!l.you && !l.club && l.v < 50) {
+          const vt0 = thermalRGB(l.v, maxV).t;
+          baseA *= 0.82 + vt0 * 0.18;
+        }
+        if (dimOthers) baseA *= 0.48;
+        if (isFocus) baseA = Math.min(1, baseA * 1.06 + 0.06);
+        ctx.globalAlpha = baseA;
+        // purposeful settle: fade + micro-scale only (no bounce travel)
+        const grow = 0.97 + localT * 0.03;
+        const gx = x + cw * (1 - grow) * 0.5;
+        const gy = y + ch * (1 - grow) * 0.5;
+        const gw = cw * grow;
+        const gh = ch * grow;
+
+        let fill, light, dark, baseR, baseG, baseB;
+        if (l.you) {
+          // calm cyan — identity without neon
+          fill = "#2f8aab";
+          light = "#6ebfdc";
+          dark = "#1a4f66";
+          baseR = 47; baseG = 138; baseB = 171;
+        } else if (l.club || l.v >= 50) {
+          // warm copper that sits on sequential high end
+          fill = "#b87828";
+          light = "#d8b060";
+          dark = "#6a4010";
+          baseR = 184; baseG = 120; baseB = 40;
+        } else {
+          const c = thermalRGB(l.v, maxV);
+          // light mute only on noise floor — mid band stays vivid for $8–40M separation
+          const mute = Math.pow(1 - c.t, 2.1) * 0.14;
+          const slate = { r: 20, g: 26, b: 40 };
+          const m = c.fill.match(/\d+/g);
+          baseR = Math.round(+m[0] * (1 - mute) + slate.r * mute);
+          baseG = Math.round(+m[1] * (1 - mute) + slate.g * mute);
+          baseB = Math.round(+m[2] * (1 - mute) + slate.b * mute);
+          // slight mid lift so sequential hues don't sink into the street
+          if (c.t > 0.25 && c.t < 0.85) {
+            baseR = Math.min(255, baseR + 8);
+            baseG = Math.min(255, baseG + 6);
+            baseB = Math.min(255, baseB + 4);
+          }
+          fill = `rgb(${baseR},${baseG},${baseB})`;
+          light = `rgb(${Math.min(255, baseR + 24)},${Math.min(255, baseG + 20)},${Math.min(255, baseB + 14)})`;
+          dark = `rgb(${(baseR * 0.68)|0},${(baseG * 0.68)|0},${(baseB * 0.68)|0})`;
+        }
+
+        // tighter corners on small leaves; softer on whales (map craft)
+        const cellR = Math.min(gw > 80 ? 4 : 2.8, gw * 0.08, gh * 0.08);
+        const vt = l.you || l.club || l.v >= 50 ? 1 : thermalRGB(l.v, maxV).t;
+
+        // base matte fill
+        ctx.fillStyle = fill;
+        roundRectPath(gx, gy, gw, gh, cellR);
+        ctx.fill();
+
+        // cushion (van Wijk): matte volume, restrained lift — print not plastic
+        if (gw > 5 && gh > 5) {
+          ctx.save();
+          roundRectPath(gx, gy, gw, gh, cellR);
+          ctx.clip();
+          const cx = gx + gw * 0.34;
+          const cy = gy + gh * 0.3;
+          const rad = Math.max(gw, gh) * (0.7 + vt * 0.16);
+          const cush = ctx.createRadialGradient(cx, cy, Math.min(gw, gh) * 0.05, gx + gw * 0.5, gy + gh * 0.55, rad);
+          const lift = 0.07 + vt * 0.07; // quieter highlight
+          cush.addColorStop(0, `rgba(255,255,255,${lift})`);
+          cush.addColorStop(0.4, `rgba(255,255,255,${lift * 0.22})`);
+          cush.addColorStop(0.65, "rgba(0,0,0,0)");
+          cush.addColorStop(0.9, `rgba(0,0,0,${0.12 + vt * 0.07})`);
+          cush.addColorStop(1, `rgba(0,0,0,${0.24 + vt * 0.1})`);
+          ctx.fillStyle = cush;
+          ctx.fillRect(gx, gy, gw, gh);
+
+          // edge darken ring — seams between cells
+          const seam = ctx.createLinearGradient(gx, gy, gx, gy + gh);
+          seam.addColorStop(0, "rgba(0,0,0,0.1)");
+          seam.addColorStop(0.07, "rgba(0,0,0,0)");
+          seam.addColorStop(0.93, "rgba(0,0,0,0)");
+          seam.addColorStop(1, "rgba(0,0,0,0.26)");
+          ctx.fillStyle = seam;
+          ctx.fillRect(gx, gy, gw, gh);
+
+          // directional wash (top-left key) — soft only
+          const wash = ctx.createLinearGradient(gx, gy, gx + gw * 0.9, gy + gh);
+          wash.addColorStop(0, `rgba(${Math.min(255, baseR + 28)},${Math.min(255, baseG + 24)},${Math.min(255, baseB + 18)},0.12)`);
+          wash.addColorStop(0.5, "rgba(0,0,0,0)");
+          wash.addColorStop(1, `rgba(${(baseR * 0.35)|0},${(baseG * 0.35)|0},${(baseB * 0.35)|0},0.18)`);
+          ctx.fillStyle = wash;
+          ctx.fillRect(gx, gy, gw, gh);
+          ctx.restore();
+        }
+
+        // hairline top edge
+        if (gw > 12 && gh > 12) {
+          ctx.save();
+          roundRectPath(gx, gy, gw, gh, cellR);
+          ctx.clip();
+          ctx.strokeStyle = "rgba(255,255,255,0.11)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(gx + 2, gy + 1.25);
+          ctx.lineTo(gx + gw - 2, gy + 1.25);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // share tick — specials / editorial only (avoids mid-cell label collisions)
+        if (
+          localT > 0.88 &&
+          (l.you || l.club || l.v >= 50 || (vt > 0.72 && gw > 110 && gh > 70))
+        ) {
+          const share = l.v / totalV;
+          const trackX = gx + 10;
+          const trackY = gy + gh - 12;
+          const trackW = Math.max(24, gw - 20);
+          ctx.fillStyle = "rgba(0,0,0,0.25)";
+          ctx.fillRect(trackX, trackY, trackW, 2);
+          ctx.fillStyle = l.you
+            ? "rgba(200,235,250,0.5)"
+            : l.club || l.v >= 50
+              ? "rgba(240,210,140,0.48)"
+              : "rgba(255,255,255,0.34)";
+          // full-width encodes 100% of block; fill is this lot's share
+          ctx.fillRect(trackX, trackY, trackW * Math.min(1, share), 2);
+        }
+
+        // value-weighted edge — dark seam against street floor (map craft)
+        ctx.strokeStyle = `rgba(0,0,0,${0.28 + vt * 0.22})`;
+        ctx.lineWidth = 0.85 + vt * 0.75;
+        roundRectPath(gx + 0.5, gy + 0.5, Math.max(0, gw - 1), Math.max(0, gh - 1), cellR);
+        ctx.stroke();
+        if (vt > 0.4 && gw > 16 && gh > 16) {
+          ctx.strokeStyle = `rgba(255,255,255,${0.04 + vt * 0.055})`;
+          ctx.lineWidth = 1;
+          roundRectPath(gx + 1.5, gy + 1.5, Math.max(0, gw - 3), Math.max(0, gh - 3), Math.max(1, cellR - 1));
+          ctx.stroke();
+        }
+
+        // specials: thin identity ring + quiet left rail for YOU
+        if (l.you || l.club || l.v >= 50) {
+          const insetR = 2.5;
+          if (gw > insetR * 2 + 8 && gh > insetR * 2 + 8) {
+            ctx.strokeStyle = l.you
+              ? "rgba(220,245,255,0.48)"
+              : "rgba(255,230,180,0.38)";
+            ctx.lineWidth = l.you ? 1.45 : 1.15;
+            roundRectPath(
+              gx + insetR, gy + insetR,
+              gw - insetR * 2, gh - insetR * 2,
+              Math.max(2, cellR - 1)
+            );
+            ctx.stroke();
+          }
+        }
+        if (l.you && gw > 14 && gh > 14) {
+          ctx.fillStyle = "rgba(255,255,255,0.52)";
+          ctx.fillRect(gx + 3, gy + 4, 2.5, Math.max(8, gh - 8));
+        }
+        ctx.restore();
+      });
+
+      // hierarchical district frames + street channel (after cells, before labels)
+      if (thermalDistricts.length && reveal >= 0.35) {
+        const da = Math.min(1, (reveal - 0.35) / 0.4);
+        // street channel in the gutter between lead and rest
+        if (thermalDistricts.length === 2) {
+          const a = thermalDistricts[0];
+          const b = thermalDistricts[1];
+          const left = a.x <= b.x ? a : b;
+          const right = a.x <= b.x ? b : a;
+          const top = a.y <= b.y ? a : b;
+          const bot = a.y <= b.y ? b : a;
+          const gapX = right.x - (left.x + left.w);
+          const gapY = bot.y - (top.y + top.h);
+          ctx.save();
+          ctx.globalAlpha = da * 0.9;
+          if (gapX > 1.2 && gapX < 32) {
+            const sx = left.x + left.w;
+            const sy = Math.min(a.y, b.y) + 2;
+            const sh = Math.max(a.h, b.h) - 4;
+            ctx.fillStyle = "rgba(0,0,0,0.36)";
+            ctx.fillRect(sx, sy, gapX, sh);
+            if (gapX >= 2.5) {
+              ctx.strokeStyle = "rgba(255,255,255,0.045)";
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(sx + gapX * 0.5, sy + 6);
+              ctx.lineTo(sx + gapX * 0.5, sy + sh - 6);
+              ctx.stroke();
+            }
+          } else if (gapY > 1.2 && gapY < 32) {
+            const sy = top.y + top.h;
+            const sx = Math.min(a.x, b.x) + 2;
+            const sw = Math.max(a.w, b.w) - 4;
+            ctx.fillStyle = "rgba(0,0,0,0.36)";
+            ctx.fillRect(sx, sy, sw, gapY);
+            if (gapY >= 2.5) {
+              ctx.strokeStyle = "rgba(255,255,255,0.045)";
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(sx + 6, sy + gapY * 0.5);
+              ctx.lineTo(sx + sw - 6, sy + gapY * 0.5);
+              ctx.stroke();
+            }
+          }
+          ctx.restore();
+        }
+        thermalDistricts.forEach((d) => {
+          ctx.save();
+          ctx.globalAlpha = da;
+          if (d.kind === "rest") {
+            // quiet well behind neighborhood pack
+            ctx.fillStyle = "rgba(255,255,255,0.015)";
+            roundRectPath(d.x, d.y, d.w, d.h, 5);
+            ctx.fill();
+          }
+          // NNGroup: visually distinct borders for top-level groups
+          if (d.kind === "lead") {
+            ctx.strokeStyle = "rgba(0,0,0,0.45)";
+            ctx.lineWidth = 2.5;
+            roundRectPath(d.x - 0.5, d.y - 0.5, d.w + 1, d.h + 1, 6);
+            ctx.stroke();
+            ctx.strokeStyle = "rgba(255,255,255,0.14)";
+            ctx.lineWidth = 1.15;
+            roundRectPath(d.x, d.y, d.w, d.h, 5);
+            ctx.stroke();
+          } else {
+            ctx.strokeStyle = "rgba(255,255,255,0.09)";
+            ctx.lineWidth = 1;
+            roundRectPath(d.x, d.y, d.w, d.h, 5);
+            ctx.stroke();
+            // dashed inner for neighborhood (softer hierarchy)
+            ctx.setLineDash([3, 3]);
+            ctx.strokeStyle = "rgba(255,255,255,0.05)";
+            ctx.lineWidth = 1;
+            roundRectPath(d.x + 2.5, d.y + 2.5, Math.max(0, d.w - 5), Math.max(0, d.h - 5), 3);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          if (d.label && d.w > 72 && d.h > 40) {
+            ctx.font = "600 9px Libre Franklin, sans-serif";
+            if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0.06em";
+            ctx.fillStyle = "rgba(255,255,255,0.38)";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            const tag =
+              d.label.toUpperCase() +
+              "  ·  " +
+              (d.share >= 0.1
+                ? Math.round(d.share * 100) + "%"
+                : (d.share * 100).toFixed(1) + "%");
+            // small plate under district caption for contrast
+            const tw = ctx.measureText(tag).width;
+            ctx.fillStyle = "rgba(6,8,12,0.45)";
+            ctx.fillRect(d.x + 5, d.y + 4, tw + 8, 14);
+            ctx.fillStyle = "rgba(255,255,255,0.4)";
+            ctx.fillText(tag, d.x + 9, d.y + 6);
+            if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0px";
+          }
+          ctx.restore();
+        });
+      }
+
+      // labels only after most of reveal — avoids mid-anim collision churn
+      if (reveal < 0.55) return;
+
+      const labelJobs = cells
+        .map((cell) => {
+          const l = cell.lot;
+          let priority = l.v;
+          if (l.you) priority += 1e9;
+          if (l.club || l.v >= 50) priority += 1e8;
+          return { cell, l, pct: (l.v / totalV) * 100, priority };
+        })
+        .sort((a, b) => b.priority - a.priority);
+
+      const placed = [];
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.globalAlpha = Math.min(1, (reveal - 0.55) / 0.35);
+
+      function measureLines(lines, padX, padY, lineH) {
+        let maxTw = 0;
+        lines.forEach((line) => {
+          ctx.font = line.font;
+          maxTw = Math.max(maxTw, ctx.measureText(line.text).width);
+        });
+        const lh = lineH || 13;
+        const px = padX == null ? 16 : padX;
+        const py = padY == null ? 12 : padY;
+        return { maxTw, lineH: lh, boxW: maxTw + px, boxH: lines.length * lh + py };
+      }
+
+      labelJobs.forEach(({ cell, l, pct }, rank) => {
+        const cw = cell.w;
+        const ch = cell.h;
+        const special = l.you || l.club || l.v >= 50;
+        // when focusing a lot, suppress other micro type (clean hierarchy)
+        if (focusLot && l !== focusLot && !special && rank > 4) return;
+        // denser mid-lot labeling in neighborhood (compact tiers)
+        if (cw < 28 || ch < 16) return;
+        if (!special && rank > 14) return;
+        if (!special && cw < 34 && ch < 22) return;
+
+        // adaptive ink from cell luminance (cartography practice)
+        const col = l.you
+          ? { r: 58, g: 150, b: 184 }
+          : l.club || l.v >= 50
+            ? { r: 192, g: 126, b: 40 }
+            : (() => {
+                const c = thermalRGB(l.v, maxV).fill.match(/\d+/g);
+                return { r: +c[0], g: +c[1], b: +c[2] };
+              })();
+        const lum = (0.2126 * col.r + 0.7152 * col.g + 0.0722 * col.b) / 255;
+        // mid-band cells (teal/moss) need earlier dark ink for WCAG-ish contrast
+        const lightCell = lum > 0.38;
+        const ink = lightCell ? "rgba(14,12,10,0.94)" : "#ffffff";
+        const inkDim = lightCell ? "rgba(14,12,10,0.58)" : "rgba(255,255,255,0.58)";
+        const inkTag = l.you
+          ? lightCell
+            ? "#0a4a62"
+            : "#dff6ff"
+          : lightCell
+            ? "#4a3006"
+            : "#f0e0b0";
+
+        const candidates = [];
+        const topN = rank <= 4; // always surface share on top lots at rest
+        const pctStr = pct.toFixed(pct >= 10 ? 0 : 1) + "%";
+        // full editorial stack for specials / top lots
+        if ((special || topN) && cw >= 78 && ch >= 50) {
+          const lines = [];
+          if (special) {
+            lines.push({
+              text: l.you ? "YOU" : "$50M CLUB",
+              font: "700 9px Libre Franklin, sans-serif",
+              color: inkTag,
+            });
+          }
+          lines.push({ text: fmtMoney(l.v), font: "700 15px Barlow Condensed, sans-serif", color: ink });
+          lines.push({
+            text: pctStr + " of block",
+            font: "500 10px Libre Franklin, sans-serif",
+            color: inkDim,
+          });
+          candidates.push({ lines, padX: 16, padY: 12, lineH: 13 });
+        }
+        // value + compact % (top lots always try this before bare value)
+        if ((special || topN) && cw >= 48 && ch >= 36) {
+          const lines = [];
+          if (l.you) {
+            lines.push({ text: "YOU", font: "700 9px Libre Franklin, sans-serif", color: inkTag });
+          }
+          lines.push({ text: fmtMoney(l.v), font: "700 13px Barlow Condensed, sans-serif", color: ink });
+          lines.push({
+            text: pctStr,
+            font: "600 10px Libre Franklin, sans-serif",
+            color: inkDim,
+          });
+          candidates.push({ lines, padX: 12, padY: 10, lineH: 12 });
+        }
+        if (cw >= 52 && ch >= 32) {
+          const lines = [];
+          if (l.you) lines.push({ text: "YOU", font: "700 9px Libre Franklin, sans-serif", color: inkTag });
+          lines.push({ text: fmtMoney(l.v), font: "700 13px Barlow Condensed, sans-serif", color: ink });
+          candidates.push({ lines, padX: 14, padY: 10, lineH: 13 });
+        }
+        if (cw >= 40 && ch >= 22) {
+          candidates.push({
+            lines: [{ text: fmtMoney(l.v), font: "700 11px Barlow Condensed, sans-serif", color: ink }],
+            padX: 10,
+            padY: 8,
+            lineH: 12,
+          });
+        }
+        // micro: value, or value·% for top lots when space is tight
+        if (cw >= 28 && ch >= 16 && (special || rank <= 9)) {
+          const short =
+            l.v >= 10 ? "$" + Math.round(l.v) : "$" + l.v.toFixed(1);
+          if (topN && cw >= 44 && ch >= 18) {
+            candidates.push({
+              lines: [{
+                text: short + " · " + pctStr,
+                font: "700 10px Barlow Condensed, sans-serif",
+                color: ink,
+              }],
+              padX: 6,
+              padY: 4,
+              lineH: 11,
+              micro: true,
+            });
+          }
+          candidates.push({
+            lines: [{ text: short, font: "700 10px Barlow Condensed, sans-serif", color: ink }],
+            padX: 6,
+            padY: 4,
+            lineH: 11,
+            micro: true,
+          });
+        }
+
+        let chosen = null;
+        let metrics = null;
+        let micro = false;
+        for (const cand of candidates) {
+          const m = measureLines(cand.lines, cand.padX, cand.padY, cand.lineH);
+          if (m.boxW <= cw - 6 && m.boxH <= ch - 6) {
+            chosen = cand.lines;
+            metrics = m;
+            micro = !!cand.micro;
+            break;
+          }
+        }
+        if (!chosen) return;
+
+        // large cells: editorial top-left labels (NYT-style); small: centered
+        const editorial = !micro && cw >= 120 && ch >= 72;
+        const hasShareTick =
+          special || (thermalRGB(l.v, maxV).t > 0.72 && cw > 110 && ch > 70);
+        const bottomReserve = hasShareTick ? 14 : 0;
+        const topReserve =
+          thermalDistricts.some(
+            (d) =>
+              d.kind === "rest" &&
+              d.label &&
+              cell.x + cw > d.x &&
+              cell.x < d.x + d.w &&
+              cell.y < d.y + 22 &&
+              cell.y + 4 > d.y
+          )
+            ? 18
+            : 0;
+        const pad = micro ? 3 : 6;
+        // position cascade: try primary, then corners — never drop specials lightly
+        const anchors = editorial
+          ? [
+              { ax: 10, ay: 10 + topReserve },
+              { ax: 10, ay: Math.max(2, ch - bottomReserve - metrics.boxH - 8) },
+              { ax: Math.max(2, cw - metrics.boxW - 10), ay: 10 + topReserve },
+              { ax: (cw - metrics.boxW) / 2, ay: (ch - bottomReserve - metrics.boxH) / 2 },
+            ]
+          : [
+              { ax: (cw - metrics.boxW) / 2, ay: topReserve + (ch - topReserve - bottomReserve - metrics.boxH) / 2 },
+              { ax: 4, ay: 4 + topReserve },
+              { ax: Math.max(2, cw - metrics.boxW - 4), ay: 4 + topReserve },
+              { ax: 4, ay: Math.max(2, ch - bottomReserve - metrics.boxH - 4) },
+              { ax: Math.max(2, cw - metrics.boxW - 4), ay: Math.max(2, ch - bottomReserve - metrics.boxH - 4) },
+            ];
+        let box = null;
+        for (let ai = 0; ai < anchors.length; ai++) {
+          const trial = {
+            x: cell.x + anchors[ai].ax,
+            y: cell.y + anchors[ai].ay,
+            w: metrics.boxW,
+            h: metrics.boxH,
+          };
+          trial.x = Math.min(cell.x + cw - trial.w - 2, Math.max(cell.x + 2, trial.x));
+          trial.y = Math.min(
+            cell.y + ch - trial.h - 2 - bottomReserve,
+            Math.max(cell.y + 2 + topReserve, trial.y)
+          );
+          if (!placed.some((p) => rectsOverlap(p, trial, pad))) {
+            box = trial;
+            break;
+          }
+        }
+        // specials: last-resort shrink padding and accept near-overlap
+        if (!box && special) {
+          const ax = editorial ? 10 : (cw - metrics.boxW) / 2;
+          const ay = editorial ? 10 + topReserve : topReserve + (ch - topReserve - bottomReserve - metrics.boxH) / 2;
+          box = {
+            x: Math.min(cell.x + cw - metrics.boxW - 2, Math.max(cell.x + 2, cell.x + ax)),
+            y: Math.min(
+              cell.y + ch - metrics.boxH - 2 - bottomReserve,
+              Math.max(cell.y + 2 + topReserve, cell.y + ay)
+            ),
+            w: metrics.boxW,
+            h: metrics.boxH,
+          };
+          if (placed.some((p) => rectsOverlap(p, box, 1))) {
+            // still blocked: skip rather than stack illegibly
+            box = null;
+          }
+        }
+        if (!box) return;
+        placed.push(box);
+
+        // plate: skip on editorial whales and pure micro ink
+        const usePlate = !micro && (!editorial || cw < 200);
+        if (usePlate) {
+          ctx.fillStyle = lightCell ? "rgba(255,250,240,0.42)" : "rgba(6,8,12,0.48)";
+          const rr = micro ? 2 : 4;
+          ctx.beginPath();
+          ctx.moveTo(box.x + rr, box.y);
+          ctx.arcTo(box.x + box.w, box.y, box.x + box.w, box.y + box.h, rr);
+          ctx.arcTo(box.x + box.w, box.y + box.h, box.x, box.y + box.h, rr);
+          ctx.arcTo(box.x, box.y + box.h, box.x, box.y, rr);
+          ctx.arcTo(box.x, box.y, box.x + box.w, box.y, rr);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        const textX = editorial ? box.x + 2 : box.x + box.w / 2;
+        const textY0 = box.y + (micro ? 7 : 11);
+        ctx.textAlign = editorial ? "left" : "center";
+        chosen.forEach((line, i) => {
+          ctx.font = line.font;
+          // cartographic: slight tracking on large area labels
+          if (editorial && ctx.letterSpacing !== undefined) {
+            ctx.letterSpacing = i === 0 ? "0.08em" : "0.02em";
+          }
+          if (!usePlate) {
+            ctx.lineWidth = micro ? 2.5 : 3;
+            ctx.strokeStyle = lightCell ? "rgba(255,250,240,0.4)" : "rgba(0,0,0,0.4)";
+            ctx.strokeText(line.text, textX, textY0 + i * metrics.lineH);
+          }
+          ctx.fillStyle = line.color;
+          ctx.globalAlpha = micro
+            ? Math.min(1, (reveal - 0.55) / 0.35) * 0.88
+            : Math.min(1, (reveal - 0.55) / 0.35);
+          ctx.fillText(line.text, textX, textY0 + i * metrics.lineH);
+        });
+        if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0px";
+        ctx.textAlign = "center";
+      });
+      ctx.globalAlpha = 1;
+
+      // hover or pinned: elegant focus card (no glow clutter)
+      const focusCell =
+        hoverCell ||
+        (pinnedLot && thermalCells.find((c) => c.lot === pinnedLot)) ||
+        null;
+      if (focusCell && reveal >= 0.55) {
+        const hc = focusCell;
+        const l = hc.lot;
+        const hx = hc.x, hy = hc.y, hw = hc.w, hh = hc.h;
+        ctx.save();
+        // distinctive selected state (NNGroup) — frame only, no glow fill
+        ctx.strokeStyle = l.you
+          ? "rgba(180,220,240,0.78)"
+          : l.club || l.v >= 50
+            ? "rgba(230,200,140,0.72)"
+            : "rgba(255,255,255,0.5)";
+        ctx.lineWidth = 1.75;
+        roundRectPath(hx + 1, hy + 1, Math.max(0, hw - 2), Math.max(0, hh - 2), 3);
+        ctx.stroke();
+        // hairline inset
+        ctx.strokeStyle = "rgba(0,0,0,0.3)";
+        ctx.lineWidth = 1;
+        roundRectPath(hx + 3.5, hy + 3.5, Math.max(0, hw - 7), Math.max(0, hh - 7), 2);
+        ctx.stroke();
+        // corner ticks — editorial selection mark
+        const tick = Math.min(10, Math.min(hw, hh) * 0.18);
+        ctx.strokeStyle = l.you
+          ? "rgba(180,220,240,0.55)"
+          : l.club || l.v >= 50
+            ? "rgba(230,200,140,0.5)"
+            : "rgba(255,255,255,0.35)";
+        ctx.lineWidth = 1.25;
+        [
+          [hx + 2, hy + 2 + tick, hx + 2, hy + 2, hx + 2 + tick, hy + 2],
+          [hx + hw - 2 - tick, hy + 2, hx + hw - 2, hy + 2, hx + hw - 2, hy + 2 + tick],
+          [hx + 2, hy + hh - 2 - tick, hx + 2, hy + hh - 2, hx + 2 + tick, hy + hh - 2],
+          [hx + hw - 2 - tick, hy + hh - 2, hx + hw - 2, hy + hh - 2, hx + hw - 2, hy + hh - 2 - tick],
+        ].forEach((seg) => {
+          ctx.beginPath();
+          ctx.moveTo(seg[0], seg[1]);
+          ctx.lineTo(seg[2], seg[3]);
+          ctx.lineTo(seg[4], seg[5]);
+          ctx.stroke();
+        });
+
+        const pct = (l.v / totalV) * 100;
+        const rank = sorted.findIndex((x) => x === l) + 1;
+        const rows = [];
+        if (l.you) rows.push({ t: "YOU", kind: "tag" });
+        else if (l.club || l.v >= 50) rows.push({ t: "$50M CLUB", kind: "tag" });
+        rows.push({ t: fmtMoney(l.v), kind: "val" });
+        rows.push({
+          t: pct.toFixed(pct >= 10 ? 0 : 1) + "% of block",
+          kind: "meta",
+        });
+        rows.push({
+          t: "#" + rank + " of " + sorted.length + " lots",
+          kind: "meta",
+        });
+
+        let maxTw = 0;
+        rows.forEach((row) => {
+          ctx.font =
+            row.kind === "tag"
+              ? "700 9px Libre Franklin, sans-serif"
+              : row.kind === "val"
+                ? "700 16px Barlow Condensed, sans-serif"
+                : "500 10px Libre Franklin, sans-serif";
+          maxTw = Math.max(maxTw, ctx.measureText(row.t).width);
+        });
+        const padX = 14;
+        const padY = 11;
+        const lineGap = 15;
+        const bw = maxTw + padX * 2;
+        const bh = rows.length * lineGap + padY * 2 - 4;
+        // prefer above; flip below; then side
+        let bx = hx + hw / 2 - bw / 2;
+        let by = hy - bh - 10;
+        let anchor = "above";
+        if (by < mapY + 4) {
+          by = hy + hh + 10;
+          anchor = "below";
+          if (by + bh > mapY + mapH - 4) {
+            // side placement
+            by = Math.max(mapY + 4, Math.min(mapY + mapH - bh - 4, hy + hh / 2 - bh / 2));
+            bx = hx + hw + 10;
+            if (bx + bw > mapX + mapW - 4) bx = hx - bw - 10;
+            anchor = "side";
+          }
+        }
+        bx = Math.max(mapX + 4, Math.min(mapX + mapW - bw - 4, bx));
+        by = Math.max(mapY + 4, Math.min(mapY + mapH - bh - 4, by));
+
+        // leader hairline from card to cell (cartography)
+        {
+          const cx = hx + hw / 2;
+          const cy = hy + hh / 2;
+          let ax = bx + bw / 2;
+          let ay = anchor === "below" ? by : by + bh;
+          if (anchor === "side") {
+            ax = bx < hx ? bx + bw : bx;
+            ay = by + bh / 2;
+          }
+          ctx.strokeStyle = "rgba(255,255,255,0.14)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(cx, cy);
+          ctx.stroke();
+        }
+
+        // card plate
+        ctx.fillStyle = "rgba(10,12,16,0.92)";
+        roundRectPath(bx, by, bw, bh, 6);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.12)";
+        ctx.lineWidth = 1;
+        roundRectPath(bx, by, bw, bh, 6);
+        ctx.stroke();
+        // accent bar
+        ctx.fillStyle = l.you
+          ? "rgba(110,190,220,0.75)"
+          : l.club || l.v >= 50
+            ? "rgba(220,170,80,0.7)"
+            : "rgba(255,255,255,0.22)";
+        ctx.fillRect(bx + 1, by + 8, 2.5, bh - 16);
+
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        rows.forEach((row, i) => {
+          const y = by + padY + 6 + i * lineGap;
+          if (row.kind === "tag") {
+            ctx.font = "700 9px Libre Franklin, sans-serif";
+            if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0.08em";
+            ctx.fillStyle = l.you ? "#b8e4f4" : "#edd9a0";
+          } else if (row.kind === "val") {
+            ctx.font = "700 16px Barlow Condensed, sans-serif";
+            if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0.02em";
+            ctx.fillStyle = "#f4efe6";
+          } else {
+            ctx.font = "500 10px Libre Franklin, sans-serif";
+            if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0.02em";
+            ctx.fillStyle = "rgba(255,255,255,0.48)";
+          }
+          ctx.fillText(row.t, bx + padX + 4, y);
+        });
+        if (ctx.letterSpacing !== undefined) ctx.letterSpacing = "0px";
+        ctx.restore();
+      }
+    }
+
+    function setVizMode(next) {
+      mode = next;
+      const shell = document.getElementById("viz-shell");
+      const panel = document.getElementById("iso-panel");
+      const isThermal = next === "thermal";
+      shell.classList.toggle("is-thermal", isThermal);
+      panel.classList.toggle("is-thermal", isThermal);
+      document.getElementById("mode-iso").setAttribute("aria-pressed", String(!isThermal));
+      document.getElementById("mode-thermal").setAttribute("aria-pressed", String(isThermal));
+      document.getElementById("viz-title").innerHTML = isThermal
+        ? "Thermal · <strong>area = share of block value</strong>"
+        : "Skyline · <strong>height = assessed value</strong>";
+      document.getElementById("hud-hint").textContent = "Drag to orbit · scroll to zoom";
+      document.getElementById("hud-mode").textContent = "Isometric";
+      hoverCell = null;
+      pinnedLot = null;
+      angVel = 0;
+      if (isThermal) {
+        thermalT = reduceMotion ? 1 : 0;
+        canvas.style.cursor = "default";
+      } else {
+        rise = reduceMotion ? 1 : Math.min(rise, 0.15);
+        canvas.style.cursor = "grab";
+      }
+      kickDraw();
+    }
+
+    function frame() {
+      if (!current) return;
+      if (mode === "iso") {
+        if (!drag && !reduceMotion) {
+          if (Math.abs(angVel) > 0.0004) {
+            // orbit inertia after drag — decays cleanly
+            angle += angVel;
+            baseAngle = angle;
+            angVel *= 0.92;
+            if (F.aabbFit) recomputeFit();
+          } else if (F.idleOrbit) {
+            angVel = 0;
+            idle += 0.0014;
+            // calm drift — classy model turntable, not a carousel
+            angle = baseAngle + Math.sin(idle) * 0.028;
+            tilt = baseTilt + Math.sin(idle * 0.45) * 0.008;
+            if (F.aabbFit) recomputeFit();
+          }
+        }
+        drawIso();
+      } else {
+        drawThermal();
+      }
+      const keep =
+        !reduceMotion &&
+        ((mode === "thermal" && thermalT < 1) ||
+          (F.idleOrbit && mode === "iso") ||
+          Math.abs(angVel) > 0.0004 ||
+          F.dust ||
+          rise < 1);
+      if (keep) {
+        if (rise < 1) {
+          // smooth ease-out settle — classy, not snappy bounce
+          rise = Math.min(1, rise + (1 - rise) * 0.095 + 0.012);
+          if (F.aabbFit && mode === "iso") recomputeFit();
+        }
+        if (mode === "thermal" && thermalT < 1) {
+          // staggered cells settle slightly slower for print-like reveal
+          thermalT = Math.min(1, thermalT + (1 - thermalT) * 0.078 + 0.014);
+        }
+        raf = requestAnimationFrame(frame);
+      }
+    }
+
+    function kickDraw() {
+      cancelAnimationFrame(raf);
+      resizeCanvas();
+      origin = computeOrigin(current.lots);
+      userZoom = 1;
+      rise = reduceMotion ? 1 : 0.06;
+      thermalT = reduceMotion ? 1 : 0;
+      idle = 0;
+      initDust();
+      recomputeFit();
+      raf = requestAnimationFrame(frame);
+    }
+
+    function thermalHit(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.clientWidth / rect.width;
+      const scaleY = CSS_H / rect.height;
+      const px = (e.clientX - rect.left) * scaleX;
+      const py = (e.clientY - rect.top) * scaleY;
+      for (let i = thermalCells.length - 1; i >= 0; i--) {
+        const c = thermalCells[i];
+        if (px >= c.x && px <= c.x + c.w && py >= c.y && py <= c.y + c.h) return c;
+      }
+      return null;
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (mode === "thermal") {
+        const found = thermalHit(e);
+        // tap toggles pin (mobile has no hover); empty space clears
+        const next = found ? found.lot : null;
+        pinnedLot = pinnedLot === next ? null : next;
+        hoverCell = found;
+        if (current) drawThermal();
+        return;
+      }
+      if (mode !== "iso") return;
+      drag = true; lx = e.clientX; ly = e.clientY;
+      angVel = 0;
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (mode === "thermal") {
+        // fine pointer only for live hover; touch uses pin from pointerdown
+        if (e.pointerType === "touch") return;
+        const found = thermalHit(e);
+        const prev = hoverCell && hoverCell.lot;
+        const next = found && found.lot;
+        if (prev !== next) {
+          hoverCell = found;
+          if (current) drawThermal();
+        }
+        canvas.style.cursor = found ? "pointer" : "default";
+        return;
+      }
+      if (!drag || mode !== "iso") return;
+      const dx = e.clientX - lx;
+      const dy = e.clientY - ly;
+      angVel = dx * 0.008;
+      angle += angVel;
+      baseAngle = angle;
+      tilt = Math.max(0.28, Math.min(1.05, tilt - dy * 0.006));
+      baseTilt = tilt;
+      lx = e.clientX; ly = e.clientY;
+      if (F.aabbFit) recomputeFit();
+      drawIso();
+    });
+    canvas.addEventListener("pointerleave", () => {
+      if (mode === "thermal" && hoverCell) {
+        hoverCell = null;
+        if (current) drawThermal();
+      }
+    });
+    canvas.addEventListener("pointerup", () => {
+      drag = false;
+      baseAngle = angle;
+      baseTilt = tilt;
+      if (mode === "iso" && F.aabbFit) {
+        recomputeFit();
+        drawIso();
+      }
+      if (mode === "iso" && Math.abs(angVel) > 0.002 && !reduceMotion) {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(frame);
+      }
+    });
+    canvas.addEventListener("wheel", (e) => {
+      if (mode !== "iso") return;
+      e.preventDefault();
+      userZoom = Math.max(0.55, Math.min(2.2, userZoom * (e.deltaY > 0 ? 0.94 : 1.06)));
+      if (F.aabbFit) recomputeFit();
+      drawIso();
+    }, { passive: false });
+
+    document.getElementById("mode-iso").addEventListener("click", () => setVizMode("iso"));
+    document.getElementById("mode-thermal").addEventListener("click", () => setVizMode("thermal"));
+
+    function countUp(el, target) {
+      if (!F.countUp || reduceMotion) {
+        el.innerHTML = "$" + target.toFixed(1) + '<span class="u">M</span>';
+        return;
+      }
+      const start = performance.now();
+      const step = (t) => {
+        const p = Math.min(1, (t - start) / 700);
+        const n = target * (1 - Math.pow(1 - p, 3));
+        el.innerHTML = "$" + n.toFixed(1) + '<span class="u">M</span>';
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    function fillCard(data) {
+      document.getElementById("r-addr").textContent = data.addr;
+      document.getElementById("r-bbl").textContent = data.bbl;
+      document.getElementById("c-where").textContent = data.where;
+      document.getElementById("c-sub").textContent = data.sub;
+      countUp(document.getElementById("c-dollars"), data.totalM);
+      document.getElementById("c-rank").textContent = data.rank;
+      document.getElementById("c-quip").textContent = data.quip;
+      document.getElementById("c-you").textContent = data.you;
+      document.getElementById("c-tall").textContent = data.tall;
+      document.getElementById("c-n").textContent = data.n;
+      document.getElementById("c-whale").textContent = data.whale;
+      document.getElementById("c-stamp").textContent = data.stamp;
+    }
+
+    function showResult(key) {
+      current = DEMOS[key] || DEMOS.midtown;
+      fillCard(current);
+      land.style.display = "none";
+      result.classList.add("is-on");
+      angle = -0.72;
+      baseAngle = -0.72;
+      tilt = 0.58;
+      baseTilt = 0.58;
+      userZoom = 1;
+      angVel = 0;
+      // double-rAF so layout has real canvas width before AABB fit
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setVizMode("iso"));
+      });
+      window.scrollTo(0, 0);
+    }
+
+    function showLand() {
+      result.classList.remove("is-on");
+      land.style.display = "";
+      cancelAnimationFrame(raf);
+      window.scrollTo(0, 0);
+    }
+
+    document.getElementById("lookup-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      showResult("midtown");
+    });
+    document.querySelectorAll("[data-demo]").forEach((btn) => {
+      btn.addEventListener("click", () => showResult(btn.getAttribute("data-demo")));
+    });
+    document.getElementById("back").addEventListener("click", showLand);
+    window.addEventListener("resize", () => {
+      if (!current) return;
+      resizeCanvas();
+      if (mode === "iso") {
+        recomputeFit();
+        drawIso();
+      } else drawThermal();
+    });
+
+    function flash(btn, msg) {
+      const p = btn.textContent;
+      btn.textContent = msg;
+      setTimeout(() => { btn.textContent = p; }, 1200);
+    }
+    document.getElementById("copy-link").addEventListener("click", (e) => flash(e.currentTarget, "Copied (mock)"));
+    document.getElementById("copy-image").addEventListener("click", (e) => flash(e.currentTarget, "Image ready (mock)"));
+  </script>
+</body>
+</html>
