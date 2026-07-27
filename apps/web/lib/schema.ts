@@ -8,6 +8,7 @@ export const lotSchema = z.object({
   v: z.number().nonnegative(),
   nLots: z.number().int().positive(),
   owner: z.string().optional(),
+  ownerRaw: z.string().optional(),
   you: z.boolean().optional(),
   club: z.boolean().optional(),
   zero: z.boolean().optional(),
@@ -29,6 +30,8 @@ export const blockPayloadSchema = z.object({
   character: z.enum(["whale", "spread", "flat", "single", "empty"]),
   rollYear: z.string(),
   extractHash: z.string(),
+  addressHint: z.string().optional(),
+  quip: z.string().optional(),
   lotToGroup: z.record(z.string(), z.number().int().nonnegative()),
   lots: z.array(lotSchema).min(1),
 });

@@ -14,7 +14,7 @@ const fixtures = new Set([
 export function DemoRedirect() {
   useEffect(() => {
     const demo = new URLSearchParams(window.location.search).get("demo");
-    if (demo && demo !== "midtown-1398" && fixtures.has(demo)) {
+    if (demo && fixtures.has(demo)) {
       window.location.replace(`/fixture/${demo}`);
     }
   }, []);

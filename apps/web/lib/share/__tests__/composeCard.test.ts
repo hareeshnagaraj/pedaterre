@@ -144,3 +144,18 @@ test("the deterministic skyline callback is accepted directly", async () => {
       });
   }
 });
+
+test("canvas and OG backends consume the shared layout contract", async () => {
+  const composeSource = await readFile(
+    new URL("../composeCard.ts", import.meta.url),
+    "utf8",
+  );
+  const ogSource = await readFile(
+    new URL("../../../app/api/og/[boro]/[block]/route.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(composeSource, /from "\.\/cardLayout"/);
+  assert.match(ogSource, /lib\/share\/cardLayout/);
+  assert.match(composeSource, /receiptGeometry/);
+  assert.match(ogSource, /receiptGeometry/);
+});

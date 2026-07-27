@@ -1,9 +1,14 @@
 import { buildShareCardModel, type ShareCardPayload } from "./cardModel";
+import {
+  CARD_COPY,
+  CARD_LAYOUT,
+  receiptGeometry,
+} from "./cardLayout";
 import { CARD_TOKENS, RECEIPT_TOKENS } from "./cardTokens";
 
-export const CARD_WIDTH = 1200;
-export const CARD_HEIGHT = 630;
-export const SKYLINE_WIDTH = 660;
+export const CARD_WIDTH = CARD_LAYOUT.width;
+export const CARD_HEIGHT = CARD_LAYOUT.height;
+export const SKYLINE_WIDTH = CARD_LAYOUT.skylineWidth;
 
 export type DrawSkylineThumb = (
   ctx: CanvasRenderingContext2D,
@@ -109,8 +114,9 @@ function drawReceipt(
   payload: ShareCardPayload,
 ): void {
   const model = buildShareCardModel(payload);
-  const x = SKYLINE_WIDTH + 42;
-  const width = CARD_WIDTH - x - 38;
+  const geometry = receiptGeometry(Boolean(model.addressedLot));
+  const { x, width } = geometry;
+  const receipt = CARD_LAYOUT.receipt;
 
   drawReceiptEdge(ctx);
 
@@ -119,18 +125,27 @@ function drawReceipt(
 
   ctx.fillStyle = RECEIPT_TOKENS.mutedInk;
   ctx.font = `800 29px ${CARD_TOKENS.num}`;
-  ctx.fillText("pedaterre", x, 55);
+  ctx.fillText(CARD_COPY.wordmark, x, receipt.wordmarkY);
 
   ctx.fillStyle = CARD_TOKENS.stamp;
-  ctx.fillRect(x, 68, 56, 4);
+  ctx.fillRect(
+    x,
+    receipt.accentY,
+    receipt.accentWidth,
+    receipt.accentHeight,
+  );
 
   ctx.fillStyle = CARD_TOKENS.paperInk;
   ctx.font = `600 22px ${CARD_TOKENS.font}`;
-  ctx.fillText(ellipsizeToWidth(ctx, model.where, width), x, 113);
+  ctx.fillText(ellipsizeToWidth(ctx, model.where, width), x, receipt.whereY);
 
   ctx.fillStyle = RECEIPT_TOKENS.mutedInk;
   ctx.font = `500 16px ${CARD_TOKENS.font}`;
-  ctx.fillText(ellipsizeToWidth(ctx, model.subline, width), x, 143);
+  ctx.fillText(
+    ellipsizeToWidth(ctx, model.subline, width),
+    x,
+    receipt.sublineY,
+  );
 
   const dollarSize = fitText(
     ctx,
@@ -143,44 +158,62 @@ function drawReceipt(
   );
   ctx.fillStyle = CARD_TOKENS.paperInk;
   ctx.font = `800 ${dollarSize}px ${CARD_TOKENS.num}`;
-  ctx.fillText(model.dollars, x, 239);
+  ctx.fillText(model.dollars, x, receipt.dollarsY);
 
   ctx.fillStyle = CARD_TOKENS.stamp;
   ctx.font = `700 28px ${CARD_TOKENS.num}`;
-  ctx.fillText(ellipsizeToWidth(ctx, model.rank, width), x, 285);
+  ctx.fillText(ellipsizeToWidth(ctx, model.rank, width), x, receipt.rankY);
 
-  drawRule(ctx, x, 312, width);
+  drawRule(ctx, x, receipt.firstRuleY, width);
 
   ctx.fillStyle = RECEIPT_TOKENS.bodyInk;
   ctx.font = `500 20px ${CARD_TOKENS.font}`;
-  drawTwoLineQuip(ctx, model.quip, x, 350, width, 29);
+  drawTwoLineQuip(
+    ctx,
+    model.quip,
+    x,
+    receipt.quipY,
+    width,
+    receipt.quipLineHeight,
+  );
 
-  let stampY = 470;
   if (model.addressedLot) {
-    drawRule(ctx, x, 418, width);
+    drawRule(ctx, x, receipt.addressedRuleY, width);
     ctx.fillStyle = RECEIPT_TOKENS.mutedInk;
     ctx.font = `700 13px ${CARD_TOKENS.num}`;
-    ctx.fillText("ADDRESSED LOT", x, 444);
+    ctx.fillText(CARD_COPY.addressedLot, x, receipt.addressedLabelY);
     ctx.fillStyle = CARD_TOKENS.paperInk;
     ctx.font = `700 23px ${CARD_TOKENS.num}`;
-    ctx.fillText(ellipsizeToWidth(ctx, model.addressedLot, width), x, 472);
-    stampY = 502;
+    ctx.fillText(
+      ellipsizeToWidth(ctx, model.addressedLot, width),
+      x,
+      receipt.addressedValueY,
+    );
   }
 
-  const stampWidth = Math.min(width, 294);
+  const stampWidth = Math.min(width, receipt.stampWidth);
   ctx.strokeStyle = CARD_TOKENS.stamp;
   ctx.lineWidth = 2;
-  ctx.strokeRect(x, stampY, stampWidth, 45);
+  ctx.strokeRect(
+    x,
+    geometry.stampY,
+    stampWidth,
+    receipt.stampHeight,
+  );
   ctx.fillStyle = CARD_TOKENS.stamp;
   ctx.font = `700 18px ${CARD_TOKENS.num}`;
   ctx.textAlign = "center";
-  ctx.fillText(model.stamp, x + stampWidth / 2, stampY + 29);
+  ctx.fillText(model.stamp, x + stampWidth / 2, geometry.stampY + 29);
 
-  drawRule(ctx, x, 578, width);
+  drawRule(ctx, x, receipt.sourceRuleY, width);
   ctx.fillStyle = RECEIPT_TOKENS.mutedInk;
   ctx.font = `500 12px ${CARD_TOKENS.font}`;
   ctx.textAlign = "left";
-  ctx.fillText(ellipsizeToWidth(ctx, model.source, width), x, 607);
+  ctx.fillText(
+    ellipsizeToWidth(ctx, model.source, width),
+    x,
+    receipt.sourceY,
+  );
 }
 
 export async function composeCard(

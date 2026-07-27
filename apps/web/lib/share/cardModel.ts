@@ -1,8 +1,16 @@
+import {
+  CARD_COPY,
+  CARD_TEXT_LIMITS,
+  truncateText,
+} from "./cardLayout";
+
 export type BlockCharacter = "whale" | "spread" | "flat" | "single" | "empty";
 
 export interface ShareLot {
   lot: number;
   v: number;
+  c?: number;
+  r?: number;
   nLots?: number;
   club?: boolean;
   you?: boolean;
@@ -76,12 +84,6 @@ export function stampFor(
   return `PD-${boroughIdentity(payload.borough).code}-${Math.trunc(payload.block)}-FY27`;
 }
 
-export function truncateText(value: string, maxLength: number): string {
-  const clean = value.replace(/\s+/g, " ").trim();
-  if (clean.length <= maxLength) return clean;
-  return `${clean.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
-}
-
 export function formatAssessedValue(value: number): string {
   const safe = Number.isFinite(value) ? Math.max(0, value) : 0;
   if (safe === 0) return "$0";
@@ -135,8 +137,11 @@ function formatAddressedLot(payload: ShareCardPayload): string | null {
         : undefined;
 
   return value == null
-    ? truncateText(label, 52)
-    : truncateText(`${label} · ${formatAssessedValue(value)}`, 52);
+    ? truncateText(label, CARD_TEXT_LIMITS.addressedLot)
+    : truncateText(
+        `${label} · ${formatAssessedValue(value)}`,
+        CARD_TEXT_LIMITS.addressedLot,
+      );
 }
 
 function generatedQuip(payload: ShareCardPayload): string {
@@ -179,7 +184,9 @@ function generatedQuip(payload: ShareCardPayload): string {
 }
 
 function rankLine(payload: ShareCardPayload): string {
-  if (payload.rankLabel?.trim()) return truncateText(payload.rankLabel, 54);
+  if (payload.rankLabel?.trim()) {
+    return truncateText(payload.rankLabel, CARD_TEXT_LIMITS.rank);
+  }
   if (Number.isFinite(payload.percentile) && (payload.percentile ?? 0) > 0) {
     const percentile = Math.max(0.1, payload.percentile ?? 0);
     return `Top ${percentile.toFixed(percentile < 1 ? 1 : 0)}% of NYC blocks`;
@@ -209,20 +216,25 @@ export function buildShareCardModel(payload: ShareCardPayload): ShareCardModel {
       place
         ? `${place} · ${identity}`
         : `${borough.name} · Block ${Math.trunc(payload.block)}`,
-      62,
+      CARD_TEXT_LIMITS.where,
     ),
     subline: truncateText(
       `${nLots} tax lots · ${nGroups} groups${combined}`,
-      68,
+      CARD_TEXT_LIMITS.subline,
     ),
     dollars:
       payload.character === "empty"
         ? "assessed at $0"
         : formatAssessedValue(totalValue(payload)),
     rank: rankLine(payload),
-    quip: truncateText(payload.quip?.trim() || generatedQuip(payload), 150),
+    quip: truncateText(
+      payload.quip?.trim() || generatedQuip(payload),
+      CARD_TEXT_LIMITS.quip,
+    ),
     addressedLot: formatAddressedLot(payload),
     stamp: stampFor(payload),
-    source: "DOF assessed market value · not sale price · nyc.gov/finance",
+    source: CARD_COPY.source,
   };
 }
+
+export { truncateText } from "./cardLayout";

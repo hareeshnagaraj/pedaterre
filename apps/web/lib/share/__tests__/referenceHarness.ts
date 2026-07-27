@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { composeCard, type DrawSkylineThumb } from "../composeCard.ts";
+import { composeCard } from "../composeCard.ts";
 import type { ShareCardPayload } from "../cardModel.ts";
-import { RasterCanvas, type RasterContext } from "./rasterCanvas.ts";
+import { drawSkylineThumb } from "../thumbAdapter.ts";
+import { RasterCanvas } from "./rasterCanvas.ts";
 
 export const REFERENCE_FIXTURES = [
   "midtown-1398",
@@ -30,40 +31,7 @@ export async function fixture(name: string): Promise<ShareCardPayload> {
   ) as ShareCardPayload;
 }
 
-export const drawDeterministicSkyline: DrawSkylineThumb = (
-  context,
-  payload,
-  width,
-  height,
-) => {
-  const ctx = context as unknown as RasterContext;
-  ctx.fillStyle = "#171411";
-  ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = "#8f877c";
-  ctx.fillRect(44, height - 70, width - 88, 2);
-
-  const values = (payload.lots ?? [])
-    .map((lot) => lot.v)
-    .filter((value) => Number.isFinite(value) && value >= 0)
-    .sort((a, b) => b - a)
-    .slice(0, 12);
-  const maximum = Math.max(...values, 1);
-  const gap = 9;
-  const barWidth =
-    (width - 88 - gap * Math.max(0, values.length - 1)) /
-    Math.max(1, values.length);
-
-  values.forEach((value, index) => {
-    const barHeight = 28 + Math.sqrt(value / maximum) * (height - 168);
-    ctx.fillStyle = index === 0 ? "#e0b04a" : "#5a544c";
-    ctx.fillRect(
-      44 + index * (barWidth + gap),
-      height - 70 - barHeight,
-      barWidth,
-      barHeight,
-    );
-  });
-};
+export const drawDeterministicSkyline = drawSkylineThumb;
 
 export async function renderReference(name: string): Promise<RasterCanvas> {
   const canvas = new RasterCanvas();
@@ -80,7 +48,7 @@ export async function renderReference(name: string): Promise<RasterCanvas> {
   });
 
   try {
-    await composeCard(await fixture(name), drawDeterministicSkyline);
+    await composeCard(await fixture(name), drawSkylineThumb);
     return canvas;
   } finally {
     if (previousDocument === undefined)

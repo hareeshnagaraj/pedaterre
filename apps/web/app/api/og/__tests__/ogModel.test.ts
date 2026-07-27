@@ -24,7 +24,7 @@ const payload = {
 test("builds the same-origin bucket URL using floor(block / 10)", () => {
   assert.equal(
     bucketUrl("https://pedaterre.example/some/path", "mn", 1398),
-    "https://pedaterre.example/data/buckets/MN/139.json",
+    "https://pedaterre.example/data/buckets/1/139.json",
   );
 });
 
@@ -58,7 +58,7 @@ test("self-fetches the bucket and returns its matching block", async () => {
     1398,
     fetcher,
   );
-  assert.equal(requested, "https://pedaterre.example/data/buckets/MN/139.json");
+  assert.equal(requested, "https://pedaterre.example/data/buckets/1/139.json");
   assert.deepEqual(result, payload);
 });
 

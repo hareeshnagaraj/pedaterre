@@ -44,6 +44,12 @@ export function normalizedBorough(value: string): string | null {
   return aliases[code] ?? null;
 }
 
+function boroughDirectory(value: string): string | null {
+  const code = normalizedBorough(value);
+  if (!code) return null;
+  return { MN: "1", BX: "2", BK: "3", QN: "4", SI: "5" }[code] ?? null;
+}
+
 function blockFromCollection(
   collection: Record<string, OgBlockPayload> | OgBlockPayload[],
   borough: string,
@@ -90,10 +96,13 @@ export function bucketUrl(
   block: number,
 ): string | null {
   const borough = normalizedBorough(boroughValue);
-  if (!borough || !Number.isSafeInteger(block) || block < 0) return null;
+  const directory = boroughDirectory(boroughValue);
+  if (!borough || !directory || !Number.isSafeInteger(block) || block < 0) {
+    return null;
+  }
   const base = new URL(origin);
   return new URL(
-    `/data/buckets/${borough}/${Math.floor(block / 10)}.json`,
+    `/data/buckets/${directory}/${Math.floor(block / 10)}.json`,
     base.origin,
   ).toString();
 }

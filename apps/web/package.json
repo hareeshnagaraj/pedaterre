@@ -5,11 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "NEXT_FONT_GOOGLE_MOCKED_RESPONSES=$PWD/font-responses.cjs next dev",
+    "sync-data": "node scripts/sync-data.mjs",
+    "prebuild": "npm run sync-data",
     "build": "NEXT_FONT_GOOGLE_MOCKED_RESPONSES=$PWD/font-responses.cjs next build",
-    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts && npm --prefix lib/share test",
+    "test:addresses": "node --experimental-strip-types test/address-matrix.ts",
+    "e2e": "npm run build && playwright test",
     "shots": "npm run build && playwright test e2e/shots.spec.ts"
   },
   "dependencies": {
+    "@vercel/og": "0.8.6",
     "next": "15.4.5",
     "react": "19.1.0",
     "react-dom": "19.1.0",

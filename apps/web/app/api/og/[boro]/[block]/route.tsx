@@ -8,6 +8,11 @@ import {
   RECEIPT_TOKENS,
 } from "../../../../../lib/share/cardTokens";
 import {
+  CARD_COPY,
+  CARD_LAYOUT,
+  receiptGeometry,
+} from "../../../../../lib/share/cardLayout";
+import {
   loadBlockForOg,
   normalizedBorough,
   silhouetteBars,
@@ -20,9 +25,7 @@ export const runtime = "edge";
 const CACHE_CONTROL = "public, immutable, max-age=31536000";
 
 type RouteContext = {
-  params:
-    | Promise<{ boro: string; block: string }>
-    | { boro: string; block: string };
+  params: Promise<{ boro: string; block: string }>;
 };
 
 function genericModel() {
@@ -46,6 +49,8 @@ function receiptModel(payload: OgBlockPayload | null) {
 
 function OgCard({ payload }: { payload: OgBlockPayload | null }) {
   const model = receiptModel(payload);
+  const geometry = receiptGeometry(Boolean(model.addressedLot));
+  const receipt = CARD_LAYOUT.receipt;
   const values = payload
     ? topGroupValues(payload)
     : [9, 5, 14, 7, 20, 11, 4, 8];
@@ -55,8 +60,8 @@ function OgCard({ payload }: { payload: OgBlockPayload | null }) {
     <div
       style={{
         display: "flex",
-        width: "1200px",
-        height: "630px",
+        width: `${CARD_LAYOUT.width}px`,
+        height: `${CARD_LAYOUT.height}px`,
         background: CARD_TOKENS.void,
         color: CARD_TOKENS.ink,
         fontFamily: CARD_TOKENS.font,
@@ -66,8 +71,8 @@ function OgCard({ payload }: { payload: OgBlockPayload | null }) {
         style={{
           position: "relative",
           display: "flex",
-          width: "660px",
-          height: "630px",
+          width: `${CARD_LAYOUT.skylineWidth}px`,
+          height: `${CARD_LAYOUT.height}px`,
           alignItems: "flex-end",
           padding: "70px 48px 70px",
           background: RECEIPT_TOKENS.skylineGround,
@@ -125,8 +130,8 @@ function OgCard({ payload }: { payload: OgBlockPayload | null }) {
         style={{
           position: "relative",
           display: "flex",
-          width: "540px",
-          height: "630px",
+          width: `${CARD_LAYOUT.width - CARD_LAYOUT.skylineWidth}px`,
+          height: `${CARD_LAYOUT.height}px`,
           flexDirection: "column",
           padding: "36px 38px 24px 42px",
           background: CARD_TOKENS.paper,
@@ -141,7 +146,7 @@ function OgCard({ payload }: { payload: OgBlockPayload | null }) {
             fontWeight: 800,
           }}
         >
-          pedaterre
+          {CARD_COPY.wordmark}
         </div>
         <div
           style={{
@@ -240,7 +245,7 @@ function OgCard({ payload }: { payload: OgBlockPayload | null }) {
                 letterSpacing: "0.08em",
               }}
             >
-              ADDRESSED LOT
+              {CARD_COPY.addressedLot}
             </div>
             <div
               style={{
@@ -260,10 +265,10 @@ function OgCard({ payload }: { payload: OgBlockPayload | null }) {
           style={{
             position: "absolute",
             left: "42px",
-            bottom: "53px",
+            top: `${geometry.stampY}px`,
             display: "flex",
-            minWidth: "294px",
-            height: "45px",
+            minWidth: `${receipt.stampWidth}px`,
+            height: `${receipt.stampHeight}px`,
             alignItems: "center",
             justifyContent: "center",
             border: `2px solid ${CARD_TOKENS.stamp}`,
@@ -304,8 +309,8 @@ export async function GET(request: Request, context: RouteContext) {
       : null;
 
   return new ImageResponse(<OgCard payload={payload} />, {
-    width: 1200,
-    height: 630,
+    width: CARD_LAYOUT.width,
+    height: CARD_LAYOUT.height,
     status: payload ? 200 : 404,
     headers: { "Cache-Control": CACHE_CONTROL },
   });

@@ -169,6 +169,7 @@ export class RasterContext {
   readonly texts: string[] = [];
   private readonly stack: DrawState[] = [];
   private readonly canvas: RasterCanvas;
+  private path: Array<{ x: number; y: number }> = [];
 
   constructor(canvas: RasterCanvas) {
     this.canvas = canvas;
@@ -204,6 +205,82 @@ export class RasterContext {
     this.paint(x, y + height - line, width, line, rgba);
     this.paint(x, y, line, height, rgba);
     this.paint(x + width - line, y, line, height, rgba);
+  }
+
+  beginPath(): void {
+    this.path = [];
+  }
+
+  moveTo(x: number, y: number): void {
+    this.path = [{ x, y }];
+  }
+
+  lineTo(x: number, y: number): void {
+    this.path.push({ x, y });
+  }
+
+  closePath(): void {
+    if (this.path.length > 1) this.path.push({ ...this.path[0] });
+  }
+
+  fill(): void {
+    const points =
+      this.path.length > 1 &&
+      this.path[0].x === this.path.at(-1)?.x &&
+      this.path[0].y === this.path.at(-1)?.y
+        ? this.path.slice(0, -1)
+        : this.path;
+    if (points.length < 3) return;
+    const minY = Math.max(0, Math.floor(Math.min(...points.map((p) => p.y))));
+    const maxY = Math.min(
+      this.canvas.height - 1,
+      Math.ceil(Math.max(...points.map((p) => p.y))),
+    );
+    const rgba = color(String(this.fillStyle));
+
+    for (let y = minY; y <= maxY; y += 1) {
+      const scanY = y + 0.5;
+      const intersections: number[] = [];
+      for (let index = 0; index < points.length; index += 1) {
+        const a = points[index];
+        const b = points[(index + 1) % points.length];
+        if ((a.y > scanY) === (b.y > scanY) || a.y === b.y) continue;
+        intersections.push(
+          a.x + ((scanY - a.y) * (b.x - a.x)) / (b.y - a.y),
+        );
+      }
+      intersections.sort((a, b) => a - b);
+      for (let index = 0; index + 1 < intersections.length; index += 2) {
+        this.paint(
+          intersections[index],
+          y,
+          intersections[index + 1] - intersections[index],
+          1,
+          rgba,
+        );
+      }
+    }
+  }
+
+  stroke(): void {
+    if (this.path.length < 2) return;
+    const rgba = color(String(this.strokeStyle));
+    const size = Math.max(1, Math.round(this.lineWidth));
+    for (let index = 1; index < this.path.length; index += 1) {
+      const a = this.path[index - 1];
+      const b = this.path[index];
+      const steps = Math.max(1, Math.ceil(Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y))));
+      for (let step = 0; step <= steps; step += 1) {
+        const amount = step / steps;
+        this.paint(
+          a.x + (b.x - a.x) * amount - size / 2,
+          a.y + (b.y - a.y) * amount - size / 2,
+          size,
+          size,
+          rgba,
+        );
+      }
+    }
   }
 
   measureText(value: string): TextMetrics {
