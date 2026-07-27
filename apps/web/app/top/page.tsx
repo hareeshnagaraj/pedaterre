@@ -7,6 +7,7 @@ import {
   empireStateEquivalents,
   formatSquareFeet,
 } from "@/lib/viz/ghost";
+import { SiteNav } from "@/components/SiteNav";
 
 export const dynamic = "force-static";
 
@@ -28,14 +29,7 @@ export default async function TopBlocksPage() {
 
   return (
     <main className="top-page">
-      <header className="site-header">
-        <a className="wordmark" href="/">
-          pedaterre
-        </a>
-        <a className="header-cta" href="/#lookup">
-          LOOK UP YOUR BLOCK
-        </a>
-      </header>
+      <SiteNav current="/top" />
 
       <section className="top-heading" aria-labelledby="top-title">
         <div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CityMap } from "@/components/CityMap";
 import { getCityStats } from "@/lib/publishedData";
+import { SiteNav } from "@/components/SiteNav";
 
 export const dynamic = "force-static";
 
@@ -15,14 +16,7 @@ export default async function MapPage() {
 
   return (
     <main className="map-page">
-      <header className="site-header">
-        <a className="wordmark" href="/">
-          pedaterre
-        </a>
-        <a className="header-cta" href="/top">
-          OPEN THE REGISTER
-        </a>
-      </header>
+      <SiteNav current="/map" />
 
       <section className="map-heading" aria-labelledby="map-title">
         <div>

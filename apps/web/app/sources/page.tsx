@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCityStats } from "@/lib/publishedData";
 import styles from "./sources.module.css";
+import { SiteNav } from "@/components/SiteNav";
 
 export const metadata: Metadata = {
   title: "pedaterre · sources & verification",
@@ -115,7 +116,9 @@ export default async function SourcesPage() {
   const stats = await getCityStats();
 
   return (
-    <main className={`sources-section ${styles.page}`}>
+    <>
+      <SiteNav current="/sources" />
+      <main className={`sources-section ${styles.page}`}>
       <section>
         <p className="eyebrow">SOURCES &amp; VERIFICATION</p>
         <h2>Filed values, named plainly.</h2>
@@ -178,6 +181,7 @@ export default async function SourcesPage() {
           {stats.nBlocks.toLocaleString("en-US")} blocks
         </p>
       </section>
-    </main>
+      </main>
+    </>
   );
 }
