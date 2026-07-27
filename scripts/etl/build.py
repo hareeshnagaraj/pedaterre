@@ -29,6 +29,7 @@ SOURCE_URL = (
     "?year=2027&period=3&rectype=1"
 )
 BOROUGH_CODES = {1: "MN", 2: "BX", 3: "BK", 4: "QN", 5: "SI"}
+PLUTO_BOROUGH_CODES = {code: boro for boro, code in BOROUGH_CODES.items()}
 TAIL_LIMIT = 120
 CLUB_THRESHOLD = 50_000_000
 MAX_BUCKET_BYTES = 150 * 1024
@@ -36,6 +37,14 @@ EXPECTED_ROWS = 1_167_962
 EXPECTED_BLOCKS = 28_798
 EXPECTED_TOTAL_MV = 1_911_446_867_962
 EXPECTED_CLUB_LOTS = 2_821
+EMPIRE_STATE_SQFT = 2_768_591
+NYC_LATITUDE_RANGE = (40.47, 40.93)
+NYC_LONGITUDE_RANGE = (-74.30, -73.68)
+AIR_RIGHTS_CAVEAT = (
+    "Capacity is a simplified as-of-right envelope only. It ignores overlays, "
+    "special districts, landmarks, air-rights transfers, and lot mergers; a "
+    "lot showing capacity may be legally unable to use it."
+)
 
 ENTITY_RE = re.compile(
     r"(?<!\w)(LLC|L\.L\.C\.|LP|L\.P\.|LLP|CORP|CORPORATION|INC|"
@@ -57,6 +66,20 @@ REQUIRED_COLUMNS = (
     "street_name",
     "period",
     "rectype",
+)
+
+PLUTO_REQUIRED_COLUMNS = (
+    "borough",
+    "block",
+    "lot",
+    "latitude",
+    "longitude",
+    "lotarea",
+    "bldgarea",
+    "builtfar",
+    "residfar",
+    "commfar",
+    "facilfar",
 )
 
 
@@ -112,6 +135,38 @@ class ScanResult:
 
 
 @dataclass
+class PlutoBlock:
+    land_area: float = 0
+    built_sqft: float = 0
+    capacity_sqft: float = 0
+    unknown_lots: int = 0
+    latitude_sum: float = 0
+    longitude_sum: float = 0
+    coordinate_lots: int = 0
+    lot_capacity: Dict[int, float] = field(default_factory=dict)
+
+    @property
+    def latitude(self) -> Optional[float]:
+        if self.coordinate_lots == 0:
+            return None
+        return self.latitude_sum / self.coordinate_lots
+
+    @property
+    def longitude(self) -> Optional[float]:
+        if self.coordinate_lots == 0:
+            return None
+        return self.longitude_sum / self.coordinate_lots
+
+
+@dataclass
+class PlutoScanResult:
+    rows_read: int = 0
+    coordinate_rows: int = 0
+    manhattan_residential_capacity_sqft: float = 0
+    blocks: Dict[Tuple[int, int], PlutoBlock] = field(default_factory=dict)
+
+
+@dataclass
 class Group:
     mv: int = 0
     n: int = 0
@@ -150,11 +205,14 @@ class ExtractInfo:
 @dataclass
 class BuildResult:
     scan: ScanResult
+    pluto: PlutoScanResult
     group_count: int
     emitted_group_count: int
     top25_taxable: List[dict]
     biggest_bucket: Path
     biggest_bucket_bytes: int
+    blocks_with_coordinates: int
+    blocks_without_coordinates: int
 
 
 def repair_owner(owner: str) -> str:
@@ -222,6 +280,142 @@ def input_paths(raw_dir: Path = DEFAULT_RAW_DIR) -> List[Path]:
     if not paths:
         raise BuildError(f"no FY2027 final-roll CSVs found in {raw_dir}")
     return paths
+
+
+def pluto_input_paths(raw_dir: Path = DEFAULT_RAW_DIR) -> List[Path]:
+    def page_number(path: Path) -> int:
+        match = re.search(r"pluto-page-(\d+)\.csv$", path.name)
+        if not match:
+            raise BuildError(f"unexpected PLUTO filename: {path}")
+        return int(match.group(1))
+
+    paths = sorted(raw_dir.glob("pluto-page-*.csv"), key=page_number)
+    if not paths:
+        raise BuildError(f"no PLUTO CSVs found in {raw_dir}")
+    return paths
+
+
+def _pluto_number(
+    value: str,
+    field_name: str,
+    path: Path,
+    line_number: int,
+) -> Optional[float]:
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        number = float(value)
+    except ValueError as exc:
+        raise BuildError(
+            f"{path}:{line_number}: non-numeric {field_name}={value!r}"
+        ) from exc
+    if not math.isfinite(number):
+        raise BuildError(
+            f"{path}:{line_number}: non-finite {field_name}={value!r}"
+        )
+    return number
+
+
+def scan_pluto(paths: Sequence[Path]) -> PlutoScanResult:
+    result = PlutoScanResult()
+    for path in paths:
+        with path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            if reader.fieldnames is None:
+                raise BuildError(f"empty CSV: {path}")
+            missing = [
+                name for name in PLUTO_REQUIRED_COLUMNS
+                if name not in reader.fieldnames
+            ]
+            if missing:
+                raise BuildError(
+                    f"{path}: missing PLUTO columns: {', '.join(missing)}"
+                )
+
+            for line_number, row in enumerate(reader, 2):
+                result.rows_read += 1
+                borough_code = (row["borough"] or "").strip()
+                boro = PLUTO_BOROUGH_CODES.get(borough_code)
+                if boro is None:
+                    raise BuildError(
+                        f"{path}:{line_number}: invalid PLUTO borough "
+                        f"{borough_code!r}"
+                    )
+                block_number = _pluto_number(
+                    row["block"], "block", path, line_number
+                )
+                lot_number = _pluto_number(row["lot"], "lot", path, line_number)
+                if (
+                    block_number is None
+                    or not block_number.is_integer()
+                    or lot_number is None
+                    or not lot_number.is_integer()
+                ):
+                    raise BuildError(
+                        f"{path}:{line_number}: PLUTO block and lot must be integers"
+                    )
+                key = (boro, int(block_number))
+                block = result.blocks.setdefault(key, PlutoBlock())
+
+                lot_area = (
+                    _pluto_number(row["lotarea"], "lotarea", path, line_number)
+                    or 0
+                )
+                built_sqft = (
+                    _pluto_number(row["bldgarea"], "bldgarea", path, line_number)
+                    or 0
+                )
+                block.land_area += lot_area
+                block.built_sqft += built_sqft
+
+                latitude = _pluto_number(
+                    row["latitude"], "latitude", path, line_number
+                )
+                longitude = _pluto_number(
+                    row["longitude"], "longitude", path, line_number
+                )
+                if (
+                    latitude is not None
+                    and longitude is not None
+                    and latitude != 0
+                    and longitude != 0
+                ):
+                    block.latitude_sum += latitude
+                    block.longitude_sum += longitude
+                    block.coordinate_lots += 1
+                    result.coordinate_rows += 1
+
+                # Lots without land cannot carry a meaningful FAR envelope.
+                if lot_area <= 0:
+                    continue
+
+                far_values = [
+                    _pluto_number(row[name], name, path, line_number)
+                    for name in ("residfar", "commfar", "facilfar")
+                ]
+                max_far = max(value or 0 for value in far_values)
+                if max_far <= 0:
+                    block.unknown_lots += 1
+                    continue
+
+                built_far = (
+                    _pluto_number(row["builtfar"], "builtfar", path, line_number)
+                    or 0
+                )
+                capacity = max(0.0, max_far - built_far) * lot_area
+                block.capacity_sqft += capacity
+                lot = int(lot_number)
+                block.lot_capacity[lot] = (
+                    block.lot_capacity.get(lot, 0) + capacity
+                )
+
+                residential_far = far_values[0] or 0
+                if boro == 1 and residential_far > 0:
+                    result.manhattan_residential_capacity_sqft += (
+                        max(0.0, residential_far - built_far) * lot_area
+                    )
+    return result
 
 
 def iter_rows(paths: Sequence[Path]) -> Iterator[RawRow]:
@@ -443,6 +637,7 @@ def build_block_payload(
     percentile: float,
     extract_hash: str,
     expected_stats: Optional[BlockStats] = None,
+    pluto_block: Optional[PlutoBlock] = None,
 ) -> BuiltBlock:
     if not rows:
         raise BuildError("cannot build an empty block")
@@ -474,6 +669,7 @@ def build_block_payload(
     largest = largest_group.mv
     items = sorted(original_items, key=lambda item: -item[1].mv)
 
+    folded_keys: List[tuple] = []
     if len(items) > TAIL_LIMIT:
         protected = [
             item for item in items if item[1].max_raw_lot > CLUB_THRESHOLD
@@ -489,6 +685,7 @@ def build_block_payload(
         keep_count = TAIL_LIMIT - 1 - len(protected)
         keep = protected + rest[:keep_count]
         tail = rest[keep_count:]
+        folded_keys = [key for key, _ in tail]
         tail_group = Group(
             mv=sum(group.mv for _, group in tail),
             n=sum(group.n for _, group in tail),
@@ -513,6 +710,7 @@ def build_block_payload(
             "r": index // side,
             "v": round(group.mv / 1_000_000, 3),
             "nLots": group.n,
+            "ghost": None,
         }
         owner, owner_raw = _group_owner(group)
         if owner:
@@ -531,6 +729,10 @@ def build_block_payload(
         if group.housenum and group.street
     }
     key_index = {key: index for index, (key, _) in enumerate(items)}
+    if folded_keys:
+        tail_index = key_index[("T", -1)]
+        for key in folded_keys:
+            key_index[key] = tail_index
     lot_to_group: Dict[str, int] = {}
     for row in rows:
         housenum = low_housenum(row.housenum)
@@ -545,6 +747,7 @@ def build_block_payload(
             lot_to_group[str(row.lot)] = key_index[key]
 
     included_rows = [row for row in rows if not is_pointer(row)]
+    largest_lot = max(included_rows, key=lambda row: (row.mv, -row.lot))
     n_lots = len(included_rows)
     llc_mv = sum(row.mv for row in included_rows if ENTITY_RE.search(row.owner))
     if expected_stats is not None:
@@ -566,6 +769,7 @@ def build_block_payload(
         "borough": BOROUGH_CODES[boro],
         "block": block,
         "bblPrefix": f"{boro}-{block:05d}",
+        "largestLotBbl": f"{boro}{block:05d}{largest_lot.lot:04d}",
         "totalMv": total,
         "totalM": round(total / 1_000_000, 2),
         "rank": rank,
@@ -579,9 +783,57 @@ def build_block_payload(
         "rollYear": ROLL_YEAR,
         "extractHash": extract_hash,
         "quip": make_quip(character, original_groups, len(items)),
+        "latitude": None,
+        "longitude": None,
+        "landArea": None,
+        "builtSqft": None,
+        "capacitySqft": None,
+        "unknownLots": None,
+        "ghostRatio": None,
         "lotToGroup": lot_to_group,
         "lots": lots_out,
     }
+    if pluto_block is not None:
+        latitude = pluto_block.latitude
+        longitude = pluto_block.longitude
+        built_sqft = round(pluto_block.built_sqft)
+        capacity_sqft = round(pluto_block.capacity_sqft)
+        denominator = built_sqft + capacity_sqft
+        payload.update(
+            {
+                "latitude": round(latitude, 7) if latitude is not None else None,
+                "longitude": (
+                    round(longitude, 7) if longitude is not None else None
+                ),
+                "landArea": round(pluto_block.land_area),
+                "builtSqft": built_sqft,
+                "capacitySqft": capacity_sqft,
+                "unknownLots": pluto_block.unknown_lots,
+                "ghostRatio": (
+                    round(capacity_sqft / denominator, 6)
+                    if denominator > 0
+                    else None
+                ),
+            }
+        )
+        group_capacity = [0.0 for _ in lots_out]
+        for lot, capacity in pluto_block.lot_capacity.items():
+            group_index = lot_to_group.get(str(lot))
+            if group_index is not None:
+                group_capacity[group_index] += capacity
+        rounded_capacity = [math.floor(capacity) for capacity in group_capacity]
+        remainder = round(sum(group_capacity)) - sum(rounded_capacity)
+        fractional_order = sorted(
+            range(len(group_capacity)),
+            key=lambda index: (
+                -(group_capacity[index] - rounded_capacity[index]),
+                index,
+            ),
+        )
+        for index in fractional_order[:remainder]:
+            rounded_capacity[index] += 1
+        for entry, capacity in zip(lots_out, rounded_capacity):
+            entry["ghost"] = capacity
 
     owner_hint, _ = _group_owner(largest_group)
     address_hint = " ".join(
@@ -615,6 +867,7 @@ def validate_payload(payload: dict) -> None:
         "borough",
         "block",
         "bblPrefix",
+        "largestLotBbl",
         "totalMv",
         "totalM",
         "rank",
@@ -628,6 +881,13 @@ def validate_payload(payload: dict) -> None:
         "rollYear",
         "extractHash",
         "quip",
+        "latitude",
+        "longitude",
+        "landArea",
+        "builtSqft",
+        "capacitySqft",
+        "unknownLots",
+        "ghostRatio",
         "lotToGroup",
         "lots",
     }
@@ -651,6 +911,22 @@ def validate_payload(payload: dict) -> None:
         raise BuildError(f"invalid borough code: {payload['borough']!r}")
     if payload["character"] not in {"empty", "single", "whale", "flat", "spread"}:
         raise BuildError(f"invalid character: {payload['character']!r}")
+    if not re.fullmatch(r"[1-5]\d{9}", payload["largestLotBbl"]):
+        raise BuildError("largestLotBbl must be a 10-digit BBL")
+    for key in ("latitude", "longitude", "ghostRatio"):
+        value = payload[key]
+        if value is not None and (
+            not isinstance(value, (int, float)) or isinstance(value, bool)
+        ):
+            raise BuildError(f"{key} must be numeric or null")
+    for key in ("landArea", "builtSqft", "capacitySqft", "unknownLots"):
+        value = payload[key]
+        if value is not None and (not _is_int(value) or value < 0):
+            raise BuildError(f"{key} must be a nonnegative integer or null")
+    if payload["capacitySqft"] is not None and payload["capacitySqft"] < 0:
+        raise BuildError("capacitySqft cannot be negative")
+    if payload["ghostRatio"] is not None and not 0 <= payload["ghostRatio"] <= 1:
+        raise BuildError("ghostRatio must be between 0 and 1")
     if not isinstance(payload["lotToGroup"], dict):
         raise BuildError("lotToGroup must be an object")
     if not isinstance(payload["lots"], list):
@@ -658,7 +934,7 @@ def validate_payload(payload: dict) -> None:
     if payload["nGroups"] != len(payload["lots"]):
         raise BuildError("nGroups does not match lots length")
 
-    lot_required = {"bbl", "lot", "c", "r", "v", "nLots"}
+    lot_required = {"bbl", "lot", "c", "r", "v", "nLots", "ghost"}
     lot_optional = {"owner", "ownerRaw", "club", "zero"}
     for entry in payload["lots"]:
         if not isinstance(entry, dict):
@@ -672,6 +948,10 @@ def validate_payload(payload: dict) -> None:
                 raise BuildError(f"lot.{key} must be an integer")
         if not isinstance(entry["v"], (int, float)) or isinstance(entry["v"], bool):
             raise BuildError("lot.v must be numeric")
+        if entry["ghost"] is not None and (
+            not _is_int(entry["ghost"]) or entry["ghost"] < 0
+        ):
+            raise BuildError("lot.ghost must be a nonnegative integer or null")
         for key in ("bbl", "owner", "ownerRaw"):
             if key in entry and not isinstance(entry[key], str):
                 raise BuildError(f"lot.{key} must be a string")
@@ -698,6 +978,123 @@ def _write_json(path: Path, value: object) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(payload)
     return len(payload)
+
+
+def _air_rights_totals(blocks: Iterable[PlutoBlock]) -> dict:
+    built_sqft = 0
+    capacity_sqft = 0
+    unknown_lots = 0
+    for block in blocks:
+        built_sqft += round(block.built_sqft)
+        capacity_sqft += round(block.capacity_sqft)
+        unknown_lots += block.unknown_lots
+    denominator = built_sqft + capacity_sqft
+    return {
+        "builtSqft": built_sqft,
+        "capacitySqft": capacity_sqft,
+        "unknownLots": unknown_lots,
+        "ghostRatio": (
+            round(capacity_sqft / denominator, 6)
+            if denominator > 0
+            else None
+        ),
+    }
+
+
+def build_ghost_stats(
+    block_keys: Iterable[Tuple[int, int]],
+    pluto: PlutoScanResult,
+) -> dict:
+    keys = sorted(block_keys)
+    matched = [
+        (key, pluto.blocks[key]) for key in keys if key in pluto.blocks
+    ]
+    boroughs = {
+        BOROUGH_CODES[boro]: _air_rights_totals(
+            block for (key_boro, _), block in matched if key_boro == boro
+        )
+        for boro in BOROUGH_CODES
+    }
+    top = sorted(
+        matched,
+        key=lambda item: (-round(item[1].capacity_sqft), item[0]),
+    )[:50]
+    return {
+        "caveat": AIR_RIGHTS_CAVEAT,
+        "empireStateSqft": EMPIRE_STATE_SQFT,
+        "citywide": _air_rights_totals(block for _, block in matched),
+        "boroughs": boroughs,
+        "top50": [
+            {
+                "b": boro,
+                "borough": BOROUGH_CODES[boro],
+                "k": block_number,
+                **_air_rights_totals([block]),
+            }
+            for (boro, block_number), block in top
+        ],
+    }
+
+
+def build_block_map(
+    scan: ScanResult,
+    pluto: PlutoScanResult,
+    ranks: Dict[Tuple[int, int], int],
+) -> Tuple[dict, int, int]:
+    columns = {
+        "b": [],
+        "k": [],
+        "x": [],
+        "y": [],
+        "m": [],
+        "a": [],
+        "d": [],
+        "t": [],
+        "r": [],
+    }
+    for key in sorted(scan.blocks):
+        geometry = pluto.blocks.get(key)
+        if geometry is None:
+            continue
+        latitude = geometry.latitude
+        longitude = geometry.longitude
+        if latitude is None or longitude is None:
+            continue
+        if not NYC_LATITUDE_RANGE[0] <= latitude <= NYC_LATITUDE_RANGE[1]:
+            raise BuildError(f"{key}: latitude outside NYC bounds: {latitude}")
+        if not NYC_LONGITUDE_RANGE[0] <= longitude <= NYC_LONGITUDE_RANGE[1]:
+            raise BuildError(f"{key}: longitude outside NYC bounds: {longitude}")
+
+        boro, block = key
+        stats = scan.blocks[key]
+        land_area = round(geometry.land_area)
+        columns["b"].append(boro)
+        columns["k"].append(block)
+        columns["x"].append(round((longitude + 74.3) * 100_000))
+        columns["y"].append(round((latitude - 40.4) * 100_000))
+        columns["m"].append(round(stats.total_mv / 1_000_000, 1))
+        columns["a"].append(land_area)
+        columns["d"].append(
+            round(stats.total_mv / land_area, 1) if land_area > 0 else None
+        )
+        columns["t"].append(1 if stats.taxable else 0)
+        columns["r"].append(ranks[key])
+
+    emitted = len(columns["b"])
+    if any(len(column) != emitted for column in columns.values()):
+        raise BuildError("block-map columns differ in length")
+    missing = len(scan.blocks) - emitted
+    coverage = emitted / len(scan.blocks) if scan.blocks else 0
+    if coverage <= 0.95:
+        raise BuildError(
+            f"PLUTO coordinate coverage {coverage:.2%} does not clear 95%"
+        )
+    if any(
+        (land_area == 0) != (density is None)
+        for land_area, density in zip(columns["a"], columns["d"])
+    ):
+        raise BuildError("block-map density nullability differs from land area")
+    return columns, emitted, missing
 
 
 def validate_tree(output_dir: Path, expected_blocks: Optional[int] = None) -> Tuple[Path, int]:
@@ -727,8 +1124,10 @@ def validate_tree(output_dir: Path, expected_blocks: Optional[int] = None) -> Tu
             f"tree has {block_count} blocks, expected {expected_blocks}"
         )
     for relative in (
+        "index/block-map.json",
         "index/block-ranks.json",
         "index/city-stats.json",
+        "index/ghost-stats.json",
         "meta.json",
     ):
         path = output_dir / relative
@@ -807,11 +1206,17 @@ def build_tree(
     raw_dir = Path(raw_dir)
     output_dir = Path(output_dir)
     paths = input_paths(raw_dir)
+    pluto_paths = pluto_input_paths(raw_dir)
     extract = load_extract_info(raw_dir, paths)
     scan = scan_inputs(paths)
+    pluto = scan_pluto(pluto_paths)
     if enforce_anchors:
         _assert_anchors(scan)
     rank_all, rank_taxable = compute_ranks(scan.blocks)
+    block_map, blocks_with_coordinates, blocks_without_coordinates = (
+        build_block_map(scan, pluto, rank_all)
+    )
+    ghost_stats = build_ghost_stats(scan.blocks, pluto)
     taxable_keys = sorted(
         (key for key, stats in scan.blocks.items() if stats.taxable),
         key=lambda key: (-scan.blocks[key].total_mv, key),
@@ -862,6 +1267,7 @@ def build_tree(
                 percentile=round(rank_all[key] / len(scan.blocks) * 100, 1),
                 extract_hash=extract.short_hash,
                 expected_stats=stats,
+                pluto_block=pluto.blocks.get(key),
             )
             current_bucket[str(block)] = built.payload
             group_count += built.real_group_count
@@ -930,10 +1336,30 @@ def build_tree(
             "emitted_group_count": emitted_group_count,
             "lot_count": scan.n_lots,
             "excluded_row_counts": scan.excluded_rows,
+            "geometry": {
+                "pluto_rows": pluto.rows_read,
+                "coordinate_rows": pluto.coordinate_rows,
+                "blocks_with_coordinates": blocks_with_coordinates,
+                "blocks_without_coordinates": blocks_without_coordinates,
+                "coverage_ratio": round(
+                    blocks_with_coordinates / len(scan.blocks), 6
+                ),
+            },
+            "air_rights": {
+                "matched_blocks": sum(
+                    key in pluto.blocks for key in scan.blocks
+                ),
+                "unmatched_blocks": sum(
+                    key not in pluto.blocks for key in scan.blocks
+                ),
+                "unknown_lots": ghost_stats["citywide"]["unknownLots"],
+            },
         }
         block_ranks.sort(key=lambda item: (-item["m"], item["b"], item["k"]))
+        _write_json(staged / "index" / "block-map.json", block_map)
         _write_json(staged / "index" / "block-ranks.json", block_ranks)
         _write_json(staged / "index" / "city-stats.json", city_stats)
+        _write_json(staged / "index" / "ghost-stats.json", ghost_stats)
         _write_json(staged / "meta.json", meta)
         biggest_staged, biggest_bytes = validate_tree(
             staged, expected_blocks=len(scan.blocks)
@@ -942,11 +1368,14 @@ def build_tree(
         _replace_output(staged, output_dir)
         return BuildResult(
             scan=scan,
+            pluto=pluto,
             group_count=group_count,
             emitted_group_count=emitted_group_count,
             top25_taxable=top25_taxable,
             biggest_bucket=output_dir / biggest_relative,
             biggest_bucket_bytes=biggest_bytes,
+            blocks_with_coordinates=blocks_with_coordinates,
+            blocks_without_coordinates=blocks_without_coordinates,
         )
     except BaseException:
         if staged.exists():
@@ -1004,6 +1433,17 @@ def print_summary(result: BuildResult) -> None:
         f"Blocks: {len(result.scan.blocks):,}; excluded R0 pointers: "
         f"{result.scan.excluded_rows['zero_value_r0_pointer']:,}."
     )
+    print(
+        f"Geometry coverage: {result.blocks_with_coordinates:,} of "
+        f"{len(result.scan.blocks):,} blocks "
+        f"({result.blocks_with_coordinates / len(result.scan.blocks):.2%}); "
+        f"{result.blocks_without_coordinates:,} omitted from the map."
+    )
+    citywide_capacity = _air_rights_totals(
+        block for key, block in result.pluto.blocks.items()
+        if key in result.scan.blocks
+    )["capacitySqft"]
+    print(f"Unbuilt as-of-right capacity: {citywide_capacity:,} square feet.")
     print(
         f"Groups: {result.group_count:,} raw; "
         f"{result.emitted_group_count:,} emitted after tail folding."

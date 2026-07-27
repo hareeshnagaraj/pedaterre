@@ -1,7 +1,5 @@
-export function thermalRGB(v: number, maxV: number) {
-  let t = Math.min(1, Math.max(0, Math.log10(v + 1) / Math.log10(maxV + 1)));
-  // mild gamma: open mids without washing whales
-  t = Math.pow(t, 0.68);
+export function thermalRampRGB(position: number) {
+  const t = Math.min(1, Math.max(0, position));
   // multi-hue sequential — mid lightness stepped up for dark-bg legibility
   const stops = [
     { t: 0, r: 16, g: 20, b: 38 },
@@ -33,4 +31,11 @@ export function thermalRGB(v: number, maxV: number) {
     light: `rgb(${lr|0},${lg|0},${lb|0})`,
     dark: `rgb(${(r * 0.66)|0},${(g * 0.66)|0},${(bl * 0.66)|0})`,
   };
+}
+
+export function thermalRGB(v: number, maxV: number) {
+  let t = Math.min(1, Math.max(0, Math.log10(v + 1) / Math.log10(maxV + 1)));
+  // mild gamma: open mids without washing whales
+  t = Math.pow(t, 0.68);
+  return thermalRampRGB(t);
 }

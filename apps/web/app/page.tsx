@@ -111,9 +111,17 @@ export default async function Home() {
           <strong>CITY REGISTER</strong>
           <span>Every block, ranked as filed.</span>
         </a>
+        <a href="/map">
+          <strong>CITY MAP</strong>
+          <span>The city drawn from its own roll.</span>
+        </a>
         <a href="/game">
           <strong>THE ASSESSOR&apos;S GAME</strong>
           <span>Two blocks. Select the higher filing.</span>
+        </a>
+        <a href="/sources">
+          <strong>SOURCES &amp; VERIFICATION</strong>
+          <span>Every figure, defined and sourced.</span>
         </a>
       </nav>
     </main>
