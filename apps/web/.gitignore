@@ -4,3 +4,4 @@ shots/
 tsconfig.tsbuildinfo
 test-results/
 public/data/
+.vercel
