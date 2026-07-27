@@ -1,0 +1,9 @@
+{
+  "name": "pedaterre-share-contract",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-loader ./__tests__/extensionLoader.mjs --experimental-strip-types --test __tests__/*.test.ts ../../components/states/__tests__/*.test.ts ../../app/api/og/__tests__/*.test.ts",
+    "refs:update": "node --experimental-loader ./__tests__/extensionLoader.mjs --experimental-strip-types __tests__/updateRefs.ts"
+  }
+}
