@@ -17,6 +17,13 @@ export type DrawSkylineThumb = (
   height: number,
 ) => void | Promise<void>;
 
+export interface GameCardPayload {
+  left: ShareCardPayload;
+  right: ShareCardPayload;
+  seed: string;
+  streak: number;
+}
+
 function drawRule(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -241,5 +248,135 @@ export async function composeCard(
   ctx.restore();
 
   drawReceipt(ctx, payload);
+  return canvas;
+}
+
+function blindSharePayload(payload: ShareCardPayload): ShareCardPayload {
+  return {
+    ...payload,
+    lots: payload.lots?.map((lot) => ({
+      ...lot,
+      club: undefined,
+      you: undefined,
+    })),
+  };
+}
+
+export function gameStamp(seed: string): string {
+  return `PD-GAME-${seed}`;
+}
+
+export async function composeGameCard(
+  payload: GameCardPayload,
+  drawSkylineThumb: DrawSkylineThumb,
+): Promise<HTMLCanvasElement> {
+  await document.fonts.ready;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = CARD_WIDTH;
+  canvas.height = CARD_HEIGHT;
+  canvas.setAttribute(
+    "aria-label",
+    `The Assessor's Game share card for seed ${payload.seed}`,
+  );
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D rendering is unavailable.");
+
+  const registerWidth = 870;
+  const skylineWidth = registerWidth / 2;
+  const skylineTop = 72;
+  const skylineHeight = 470;
+
+  ctx.fillStyle = CARD_TOKENS.void;
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+  for (const [index, block] of [payload.left, payload.right].entries()) {
+    const x = index * skylineWidth;
+    ctx.save();
+    ctx.translate(x, skylineTop);
+    await drawSkylineThumb(
+      ctx,
+      blindSharePayload(block),
+      skylineWidth,
+      skylineHeight,
+    );
+    ctx.restore();
+
+    ctx.fillStyle = CARD_TOKENS.inkDim;
+    ctx.font = `700 16px ${CARD_TOKENS.font}`;
+    ctx.textAlign = "left";
+    ctx.fillText(block.borough.toUpperCase(), x + 24, 43);
+  }
+
+  ctx.fillStyle = CARD_TOKENS.inkDim;
+  ctx.fillRect(skylineWidth, skylineTop, 1, skylineHeight);
+  ctx.fillStyle = CARD_TOKENS.paper;
+  ctx.fillRect(registerWidth, 0, CARD_WIDTH - registerWidth, CARD_HEIGHT);
+
+  const receiptX = registerWidth + 34;
+  const receiptWidth = CARD_WIDTH - receiptX - 30;
+  ctx.textAlign = "left";
+  ctx.fillStyle = RECEIPT_TOKENS.mutedInk;
+  ctx.font = `800 26px ${CARD_TOKENS.num}`;
+  ctx.fillText("pedaterre", receiptX, 50);
+
+  ctx.fillStyle = CARD_TOKENS.stamp;
+  ctx.fillRect(receiptX, 65, 52, 4);
+
+  ctx.fillStyle = CARD_TOKENS.paperInk;
+  ctx.font = `800 36px ${CARD_TOKENS.num}`;
+  ctx.fillText("THE ASSESSOR'S", receiptX, 121);
+  ctx.fillText("GAME", receiptX, 157);
+
+  ctx.fillStyle = RECEIPT_TOKENS.mutedInk;
+  ctx.font = `700 13px ${CARD_TOKENS.font}`;
+  ctx.fillText("STREAK ON FILE", receiptX, 211);
+
+  const score = Math.max(0, Math.trunc(payload.streak)).toLocaleString("en-US");
+  const scoreSize = fitText(
+    ctx,
+    score,
+    receiptWidth,
+    190,
+    104,
+    800,
+    CARD_TOKENS.num,
+  );
+  ctx.fillStyle = CARD_TOKENS.paperInk;
+  ctx.font = `800 ${scoreSize}px ${CARD_TOKENS.num}`;
+  ctx.fillText(score, receiptX, 363);
+
+  drawRule(ctx, receiptX, 397, receiptWidth);
+  ctx.fillStyle = RECEIPT_TOKENS.mutedInk;
+  ctx.font = `700 12px ${CARD_TOKENS.font}`;
+  ctx.fillText("RUN SEED", receiptX, 431);
+  ctx.fillStyle = CARD_TOKENS.paperInk;
+  ctx.font = `700 24px ${CARD_TOKENS.num}`;
+  ctx.fillText(
+    ellipsizeToWidth(ctx, payload.seed, receiptWidth),
+    receiptX,
+    461,
+  );
+
+  const stamp = gameStamp(payload.seed);
+  ctx.strokeStyle = CARD_TOKENS.stamp;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(receiptX, 493, receiptWidth, 44);
+  ctx.fillStyle = CARD_TOKENS.stamp;
+  ctx.font = `700 17px ${CARD_TOKENS.num}`;
+  ctx.textAlign = "center";
+  ctx.fillText(stamp, receiptX + receiptWidth / 2, 522);
+
+  drawRule(ctx, receiptX, 574, receiptWidth);
+  ctx.fillStyle = RECEIPT_TOKENS.mutedInk;
+  ctx.font = `500 11px ${CARD_TOKENS.font}`;
+  ctx.textAlign = "left";
+  ctx.fillText("DOF FINAL ASSESSMENT ROLL", receiptX, 603);
+
+  ctx.fillStyle = CARD_TOKENS.inkDim;
+  ctx.font = `500 11px ${CARD_TOKENS.font}`;
+  ctx.fillText("Two blocks. One filed value is higher.", 24, 594);
+
   return canvas;
 }
