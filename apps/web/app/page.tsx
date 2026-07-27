@@ -105,6 +105,10 @@ export default async function Home() {
           NYC Department of Finance property assessments
         </a>
       </section>
+
+      <footer className="landing-footer">
+        <a href="/top">Ranked list of every block</a>
+      </footer>
     </main>
   );
 }

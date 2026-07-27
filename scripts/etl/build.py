@@ -726,7 +726,11 @@ def validate_tree(output_dir: Path, expected_blocks: Optional[int] = None) -> Tu
         raise BuildError(
             f"tree has {block_count} blocks, expected {expected_blocks}"
         )
-    for relative in ("index/city-stats.json", "meta.json"):
+    for relative in (
+        "index/block-ranks.json",
+        "index/city-stats.json",
+        "meta.json",
+    ):
         path = output_dir / relative
         with path.open(encoding="utf-8") as handle:
             assert_finite(json.load(handle), relative)
@@ -823,6 +827,7 @@ def build_tree(
     group_count = 0
     emitted_group_count = 0
     block_count = 0
+    block_ranks: List[dict] = []
     top_hints: Dict[Tuple[int, int], Tuple[str, str]] = {}
     current_bucket_key: Optional[Tuple[int, int]] = None
     current_bucket: Dict[str, dict] = {}
@@ -862,6 +867,16 @@ def build_tree(
             group_count += built.real_group_count
             emitted_group_count += built.payload["nGroups"]
             block_count += 1
+            rank_row = {
+                "b": boro,
+                "k": block,
+                "m": stats.total_mv,
+                "t": stats.taxable,
+                "c": built.payload["character"],
+            }
+            if built.address_hint:
+                rank_row["a"] = built.address_hint[:28]
+            block_ranks.append(rank_row)
             if key in top25_key_set:
                 top_hints[key] = (built.address_hint, built.owner_hint)
         flush_bucket()
@@ -916,6 +931,8 @@ def build_tree(
             "lot_count": scan.n_lots,
             "excluded_row_counts": scan.excluded_rows,
         }
+        block_ranks.sort(key=lambda item: (-item["m"], item["b"], item["k"]))
+        _write_json(staged / "index" / "block-ranks.json", block_ranks)
         _write_json(staged / "index" / "city-stats.json", city_stats)
         _write_json(staged / "meta.json", meta)
         biggest_staged, biggest_bytes = validate_tree(
