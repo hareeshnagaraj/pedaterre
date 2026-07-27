@@ -1,0 +1,25 @@
+{
+  "name": "pedaterre-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "NEXT_FONT_GOOGLE_MOCKED_RESPONSES=$PWD/font-responses.cjs next dev",
+    "build": "NEXT_FONT_GOOGLE_MOCKED_RESPONSES=$PWD/font-responses.cjs next build",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "shots": "npm run build && playwright test e2e/shots.spec.ts"
+  },
+  "dependencies": {
+    "next": "15.4.5",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "22.15.30",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "typescript": "5.8.3"
+  }
+}
