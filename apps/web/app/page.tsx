@@ -106,9 +106,16 @@ export default async function Home() {
         </a>
       </section>
 
-      <footer className="landing-footer">
-        <a href="/top">Ranked list of every block</a>
-      </footer>
+      <nav className="landing-footer" aria-label="Site sections">
+        <a href="/top">
+          <strong>CITY REGISTER</strong>
+          <span>Every block, ranked as filed.</span>
+        </a>
+        <a href="/game">
+          <strong>THE ASSESSOR&apos;S GAME</strong>
+          <span>Two blocks. Select the higher filing.</span>
+        </a>
+      </nav>
     </main>
   );
 }

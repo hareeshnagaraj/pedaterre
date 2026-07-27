@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { BlockPayload, Lot } from "@/lib/schema";
+import { boroughName } from "@/lib/borough";
 import { CANVAS_COLORS, TOKENS } from "@/lib/tokens";
 import { thermalRGB } from "@/lib/viz/color";
 import {
@@ -58,9 +59,37 @@ const F = {
   thermalReveal: true,
 } as const;
 
-function EmptyBlockViz() {
+function EmptyBlockViz({
+  blind = false,
+  payload,
+}: {
+  blind?: boolean;
+  payload?: BlockPayload;
+}) {
   const [mode, setMode] = useState<VizMode>("iso");
   const thermal = mode === "thermal";
+
+  if (blind) {
+    return (
+      <section
+        className="viz-shell"
+        data-blind="true"
+        data-mode="iso"
+        data-rendered="true"
+        data-reduced-motion="true"
+      >
+        <div className="iso-panel">
+          <canvas
+            width="900"
+            height="440"
+            aria-label={`Schematic skyline of a ${
+              boroughName(payload?.borough ?? "") ?? payload?.borough ?? "NYC"
+            } tax block`}
+          />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -119,12 +148,25 @@ function EmptyBlockViz() {
   );
 }
 
-export function BlockViz({ payload }: { payload: BlockPayload }) {
-  if (payload.totalMv === 0) return <EmptyBlockViz />;
-  return <CanvasBlockViz payload={payload} />;
+interface BlockVizProps {
+  payload: BlockPayload;
+  blind?: boolean;
 }
 
-function CanvasBlockViz({ payload }: { payload: BlockPayload }) {
+export function BlockViz({ payload, blind = false }: BlockVizProps) {
+  if (payload.totalMv === 0) {
+    return <EmptyBlockViz blind={blind} payload={payload} />;
+  }
+  return <CanvasBlockViz payload={payload} blind={blind} />;
+}
+
+function CanvasBlockViz({
+  payload,
+  blind,
+}: {
+  payload: BlockPayload;
+  blind: boolean;
+}) {
   const shellRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -749,7 +791,7 @@ function CanvasBlockViz({ payload }: { payload: BlockPayload }) {
       const h = state.cssH;
       state.isoLabelJobs = [];
       // value labels: specials always + top mid towers (restrained hierarchy)
-      {
+      if (!blind) {
         const maxV0 = Math.max(...payload.lots.map((l) => l.v));
         const ranked = [...payload.lots].sort((a, b) => b.v - a.v);
         state.isoValueLabels = new Set();
@@ -884,8 +926,8 @@ function CanvasBlockViz({ payload }: { payload: BlockPayload }) {
         ctx.beginPath();
         pad.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
         ctx.closePath();
-        if (l.you) ctx.fillStyle = "rgba(110,200,230,0.09)";
-        else if (l.club) ctx.fillStyle = "rgba(224,176,74,0.08)";
+        if (!blind && l.you) ctx.fillStyle = "rgba(110,200,230,0.09)";
+        else if (!blind && l.club) ctx.fillStyle = "rgba(224,176,74,0.08)";
         else ctx.fillStyle = "rgba(255,255,255,0.028)";
         ctx.fill();
         ctx.strokeStyle = "rgba(0,0,0,0.22)";
@@ -903,10 +945,14 @@ function CanvasBlockViz({ payload }: { payload: BlockPayload }) {
           const t = Math.min(1, Math.max(0, (d + 4) / 14));
           // atmospheric recession — far street softens, specials stay clear
           let a = 0.74 + (1 - t) * 0.26;
-          if (l.you || l.club) a = Math.min(1, a + 0.1);
+          if (!blind && (l.you || l.club)) a = Math.min(1, a + 0.1);
           ctx.globalAlpha = a;
         }
-        drawBuilding(l.c, l.r, l.v, l, maxV, false);
+        const renderLot =
+          blind && (l.you || l.club)
+            ? { ...l, you: undefined, club: undefined }
+            : l;
+        drawBuilding(l.c, l.r, l.v, renderLot, maxV, false);
         ctx.globalAlpha = 1;
       });
 
@@ -1768,6 +1814,7 @@ function CanvasBlockViz({ payload }: { payload: BlockPayload }) {
       state.raf = 0;
       if (state.disposed || !state.visible) return;
       const idleActive =
+        !blind &&
         !state.reduceMotion &&
         F.idleOrbit &&
         performance.now() - state.lastInteraction < 20_000;
@@ -1860,7 +1907,7 @@ function CanvasBlockViz({ payload }: { payload: BlockPayload }) {
         canvas.style.cursor = "default";
       } else {
         state.rise = state.reduceMotion ? 1 : Math.min(state.rise, 0.15);
-        canvas.style.cursor = "grab";
+        canvas.style.cursor = blind ? "default" : "grab";
       }
       state.lastInteraction = performance.now();
       kickDraw();
@@ -2028,15 +2075,19 @@ function CanvasBlockViz({ payload }: { payload: BlockPayload }) {
       requestDraw();
     };
 
-    canvas.addEventListener("pointerdown", handlePointerDown, { signal });
-    canvas.addEventListener("pointermove", handlePointerMove, {
-      signal,
-      passive: false,
-    });
-    canvas.addEventListener("pointerleave", handlePointerLeave, { signal });
-    canvas.addEventListener("pointerup", handlePointerEnd, { signal });
-    canvas.addEventListener("pointercancel", handlePointerEnd, { signal });
-    canvas.addEventListener("wheel", handleWheel, { signal, passive: false });
+    if (!blind) {
+      canvas.addEventListener("pointerdown", handlePointerDown, { signal });
+      canvas.addEventListener("pointermove", handlePointerMove, {
+        signal,
+        passive: false,
+      });
+      canvas.addEventListener("pointerleave", handlePointerLeave, { signal });
+      canvas.addEventListener("pointerup", handlePointerEnd, { signal });
+      canvas.addEventListener("pointercancel", handlePointerEnd, { signal });
+      canvas.addEventListener("wheel", handleWheel, { signal, passive: false });
+    } else {
+      canvas.style.cursor = "default";
+    }
     isoButton.addEventListener("click", () => setVizMode("iso"), { signal });
     thermalButton.addEventListener("click", () => setVizMode("thermal"), {
       signal,
@@ -2075,15 +2126,25 @@ function CanvasBlockViz({ payload }: { payload: BlockPayload }) {
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
     };
-  }, [payload]);
+  }, [blind, payload]);
 
   return (
-    <section className="viz-shell" ref={shellRef} data-rendered="false">
+    <section
+      className="viz-shell"
+      ref={shellRef}
+      data-blind={String(blind)}
+      data-rendered="false"
+    >
       <div className="viz-toolbar">
         <div className="viz-toolbar-title" ref={titleRef}>
           Skyline · <strong>height = assessed value</strong>
         </div>
-        <div className="mode-switch" role="tablist" aria-label="Visualization mode">
+        <div
+          className="mode-switch"
+          role="tablist"
+          aria-label="Visualization mode"
+          hidden={blind}
+        >
           <button
             ref={isoButtonRef}
             type="button"
@@ -2120,14 +2181,20 @@ function CanvasBlockViz({ payload }: { payload: BlockPayload }) {
           ref={canvasRef}
           width="900"
           height="440"
-          aria-label={`Schematic value visualization of ${payload.borough} tax block ${payload.block}`}
+          aria-label={
+            blind
+              ? `Schematic skyline of a ${
+                  boroughName(payload.borough) ?? payload.borough
+                } tax block`
+              : `Schematic value visualization of ${payload.borough} tax block ${payload.block}`
+          }
         />
-        <div className="iso-hud">
+        <div className="iso-hud" hidden={blind}>
           <span ref={hudHintRef}>Drag to orbit · scroll to zoom</span>
           <span ref={hudModeRef}>Isometric</span>
         </div>
       </div>
-      <div className="thermal-footer">
+      <div className="thermal-footer" hidden={blind}>
         <div className="thermal-legend">
           <span>
             <i className="legend-you" />
