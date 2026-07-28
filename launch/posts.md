@@ -94,3 +94,21 @@ same hour wastes the best image.
   disclaimer is already on every page and every card.
 - Do not post a number that is not in `city-stats.json` or a block payload.
 - If the thread turns political, do not follow it there.
+
+---
+
+## Assets (in `launch/assets/`)
+
+| file | use |
+|---|---|
+| `pedaterre-demo.mp4` | **post this one** — X re-encodes GIFs to video anyway, and 0.3MB beats 4.5MB |
+| `pedaterre-demo.gif` | fallback for anywhere that needs a true GIF |
+| `pedaterre-demo.webm` | source recording |
+| `ghost-bk612-permitted.png` | post #3 — the ghost city image |
+| `ghost-bk612-built.png` | pair it with the above to show the before |
+| `register-top.png` | post #2 — JFK at the top of the register |
+| `game-blind-pair.png` | post #4 — the blind pair |
+| `mn-1171.png`, `median-block.png` | share cards, from the OG renderer |
+
+The demo runs ~20s: typing an address, the skyline resolving, one orbit
+drag, then the switch to `AS PERMITTED`.
