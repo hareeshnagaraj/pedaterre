@@ -383,6 +383,7 @@ class RuleTests(unittest.TestCase):
             self.assertEqual(block.longitude, -73.95)
             self.assertEqual(block.land_area, 180)
             self.assertEqual(block.built_sqft, 80)
+            self.assertEqual(block.lot_built_sqft, {1: 50, 2: 20, 3: 10})
             self.assertEqual(block.capacity_sqft, 200)
             self.assertEqual(block.unknown_lots, 1)
             self.assertEqual(result.manhattan_residential_capacity_sqft, 200)
@@ -395,6 +396,7 @@ class RuleTests(unittest.TestCase):
             latitude_sum=40.7,
             longitude_sum=-74.0,
             coordinate_lots=1,
+            lot_built_sqft={1: 50},
             lot_capacity={1: 200},
         )
         result = build.build_block_payload(
@@ -407,8 +409,27 @@ class RuleTests(unittest.TestCase):
         ).payload
         self.assertEqual(result["builtSqft"], 50)
         self.assertEqual(result["capacitySqft"], 200)
+        self.assertEqual(result["lots"][0]["builtSqft"], 50)
         self.assertEqual(result["lots"][0]["ghost"], 200)
         self.assertNotIn("$", build.AIR_RIGHTS_CAVEAT)
+
+    def test_group_built_area_sums_to_rounded_block_built_area(self):
+        geometry = build.PlutoBlock(
+            built_sqft=70.8,
+            lot_built_sqft={1: 50.4, 2: 20.4},
+        )
+        result = build.build_block_payload(
+            [row(), row(parid="1000010002", lot=2, owner="JOHN DOE")],
+            rank=1,
+            rank_taxable=1,
+            percentile=1.0,
+            extract_hash="deadbeef",
+            pluto_block=geometry,
+        ).payload
+        self.assertEqual(
+            sum(group["builtSqft"] for group in result["lots"]),
+            result["builtSqft"],
+        )
 
     def test_block_without_pluto_match_reports_unknown_not_zero(self):
         result = payload([row()])
@@ -420,6 +441,7 @@ class RuleTests(unittest.TestCase):
             "ghostRatio",
         ):
             self.assertIsNone(result[key])
+        self.assertIsNone(result["lots"][0]["builtSqft"])
         self.assertIsNone(result["lots"][0]["ghost"])
 
     def test_quip_templates_are_deterministic(self):

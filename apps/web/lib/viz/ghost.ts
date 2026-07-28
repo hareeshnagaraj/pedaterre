@@ -1,24 +1,50 @@
 import type { BlockPayload, Lot } from "../schema.ts";
 import { hScale } from "./projection.ts";
 
-const SQFT_PER_MILLION = 1_000_000;
-// Capacity adds height above the skyline's positive-value floor.
-const HEIGHT_FLOOR = hScale(Number.MIN_VALUE);
+const MAX_GHOST_RATIO = 3;
+const VACANT_GHOST_PROPORTION = 0.5;
+const MINIMUM_BUILT_HEIGHT = hScale(Number.MIN_VALUE);
 
-export function ghostHeight(capacitySqft: number | null | undefined): number {
-  if (capacitySqft == null || capacitySqft <= 0) return 0;
-  return Math.max(
-    0,
-    hScale(capacitySqft / SQFT_PER_MILLION) - HEIGHT_FLOOR,
-  );
+export function ghostHeight(
+  lot: Lot,
+  blockMedianBuiltHeight: number,
+): number {
+  if (lot.ghost == null || lot.ghost <= 0) return 0;
+  if (lot.builtSqft == null || lot.builtSqft <= 0) {
+    // No supported ratio exists, so use half the block median as a modest fallback.
+    const medianHeight =
+      Number.isFinite(blockMedianBuiltHeight) && blockMedianBuiltHeight > 0
+        ? blockMedianBuiltHeight
+        : MINIMUM_BUILT_HEIGHT;
+    return medianHeight * VACANT_GHOST_PROPORTION;
+  }
+
+  // Cap the area ratio so a small existing building cannot create an absurd spike.
+  const ratio = Math.min(lot.ghost / lot.builtSqft, MAX_GHOST_RATIO);
+  return builtHeight(lot) * ratio;
 }
 
 export function builtHeight(lot: Lot): number {
   return hScale(lot.v);
 }
 
-export function permittedHeight(lot: Lot): number {
-  return builtHeight(lot) + ghostHeight(lot.ghost);
+export function medianBuiltHeight(lots: readonly Lot[]): number {
+  const heights = lots
+    .map(builtHeight)
+    .filter((height) => height > 0)
+    .sort((a, b) => a - b);
+  if (heights.length === 0) return MINIMUM_BUILT_HEIGHT;
+  const middle = Math.floor(heights.length / 2);
+  return heights.length % 2 === 0
+    ? (heights[middle - 1] + heights[middle]) / 2
+    : heights[middle];
+}
+
+export function permittedHeight(
+  lot: Lot,
+  blockMedianBuiltHeight: number,
+): number {
+  return builtHeight(lot) + ghostHeight(lot, blockMedianBuiltHeight);
 }
 
 export function hasGhostMassing(payload: BlockPayload): boolean {

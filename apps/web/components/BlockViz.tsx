@@ -9,6 +9,7 @@ import {
   builtHeight,
   ghostHeight,
   hasGhostMassing,
+  medianBuiltHeight,
   permittedHeight,
 } from "@/lib/viz/ghost";
 import {
@@ -233,6 +234,7 @@ function CanvasBlockViz({
     const context = canvas.getContext("2d");
     if (!context) return;
     const ctx = context;
+    const blockMedianHeight = medianBuiltHeight(payload.lots);
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const controller = new AbortController();
     const { signal } = controller;
@@ -327,7 +329,9 @@ function CanvasBlockViz({
         state.angle,
         state.tilt,
         state.userZoom,
-        fitPermitted ? permittedHeight : undefined,
+        fitPermitted
+          ? (lot) => permittedHeight(lot, blockMedianHeight)
+          : undefined,
       );
       state.fitKey = key;
     }
@@ -737,7 +741,7 @@ function CanvasBlockViz({
 
     function drawGhost(lot: Lot, maxV: number) {
       if (!ghostEnabled || state.ghostT <= 0.001) return;
-      const extraHeight = ghostHeight(lot.ghost) * state.ghostT;
+      const extraHeight = ghostHeight(lot, blockMedianHeight) * state.ghostT;
       if (extraHeight <= 0.01) return;
 
       const base = 0.62;
