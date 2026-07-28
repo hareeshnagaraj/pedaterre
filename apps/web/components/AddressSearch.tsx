@@ -235,7 +235,8 @@ export function AddressSearch() {
         </button>
       </form>
       <p className="search-help" id={`${listboxId}-help`}>
-        Raw BBLs work too: borough, five-digit block, four-digit lot.
+        A BBL works too — borough, block, and lot, the city&apos;s parcel
+        identifier: one digit of borough, five of block, four of lot.
       </p>
 
       <div className="search-state" id={`${listboxId}-notice`}>
