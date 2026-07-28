@@ -1,6 +1,7 @@
 import csv
 import json
 import math
+import re
 import sys
 import tempfile
 import unittest
@@ -211,6 +212,43 @@ class RuleTests(unittest.TestCase):
         self.assertTrue(raw_club["club"])
         self.assertTrue(zero["zero"])
         self.assertTrue(net_zero["zero"])
+
+    def test_club_record_keeps_raw_lot_fields_and_lot_taxability(self):
+        raw_owner = "A" * 40 + " " + "BC"
+        record = build.club_lot_record(
+            row(
+                boro=4,
+                block=123,
+                lot=45,
+                mv=50_000_001,
+                act_total=200,
+                act_exempt=99,
+                owner=raw_owner,
+                housenum=" 10-12 ",
+                street=" MAIN STREET ",
+                bldg_class="O4",
+            )
+        )
+        self.assertEqual(
+            record,
+            {
+                "bbl": "4001230045",
+                "boro": 4,
+                "block": 123,
+                "lot": 45,
+                "mv": 50_000_001,
+                "owner": "A" * 40 + "BC",
+                "address": "10-12 MAIN STREET",
+                "bldgClass": "O4",
+                "taxable": True,
+            },
+        )
+        self.assertIsNone(build.club_lot_record(row(mv=build.CLUB_THRESHOLD)))
+        unnamed = build.club_lot_record(
+            row(mv=50_000_001, act_total=0, owner=" NAME NOT ON FILE ")
+        )
+        self.assertNotIn("owner", unnamed)
+        self.assertFalse(unnamed["taxable"])
 
     def test_rule_7_character_thresholds_and_ties(self):
         group = lambda value, maximum=None: build.Group(
@@ -614,6 +652,49 @@ class ProductionTreeTests(unittest.TestCase):
             )
         )
         self.assertTrue(all(len(row.get("a", "")) <= 28 for row in rows))
+
+    def test_club_lot_index_matches_city_anchors_and_bucket_tree(self):
+        with (
+            build.DEFAULT_OUTPUT_DIR / "index" / "club-lots.json"
+        ).open(encoding="utf-8") as handle:
+            rows = json.load(handle)
+        with (
+            build.DEFAULT_OUTPUT_DIR / "index" / "city-stats.json"
+        ).open(encoding="utf-8") as handle:
+            city = json.load(handle)
+
+        self.assertEqual(len(rows), city["clubLots"])
+        self.assertLessEqual(
+            (build.DEFAULT_OUTPUT_DIR / "index" / "club-lots.json").stat().st_size,
+            build.MAX_CLUB_LOTS_BYTES,
+        )
+        self.assertTrue(all(row["mv"] > build.CLUB_THRESHOLD for row in rows))
+        self.assertTrue(
+            all(
+                left["mv"] >= right["mv"]
+                for left, right in zip(rows, rows[1:])
+            )
+        )
+        self.assertEqual(
+            round(sum(row["mv"] for row in rows) / city["totalMv"], 4),
+            city["clubShareOfMv"],
+        )
+        self.assertTrue(
+            all(re.fullmatch(r"[1-5]\d{9}", row["bbl"]) for row in rows)
+        )
+
+        bucket_keys = set()
+        for bucket_path in (
+            build.DEFAULT_OUTPUT_DIR / "buckets"
+        ).glob("*/*.json"):
+            boro = int(bucket_path.parent.name)
+            with bucket_path.open(encoding="utf-8") as handle:
+                bucket_keys.update(
+                    (boro, int(block)) for block in json.load(handle)
+                )
+        self.assertTrue(
+            all((row["boro"], row["block"]) in bucket_keys for row in rows)
+        )
 
     def test_z_determinism(self):
         first = build.hash_tree(build.DEFAULT_OUTPUT_DIR)
