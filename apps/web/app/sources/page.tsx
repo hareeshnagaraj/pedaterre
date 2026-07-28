@@ -17,6 +17,12 @@ interface Claim {
 
 const CLAIMS: Claim[] = [
   {
+    claim: "BBL",
+    definition:
+      "Borough, block, and lot — the city's identifier for a single tax parcel. One digit of borough (1 Manhattan, 2 Bronx, 3 Brooklyn, 4 Queens, 5 Staten Island), then five digits of block and four of lot.",
+    source: "DOF roll",
+  },
+  {
     claim: "Block total",
     definition:
       "Sum of assessed market value for every tax lot on the block, final roll.",
