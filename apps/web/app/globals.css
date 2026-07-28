@@ -317,10 +317,22 @@ a { color: inherit; }
   border: 1px solid oklch(1 0 0 / 0.12);
 }
 
-.city-strip div {
+.city-strip div,
+.city-strip > a {
   min-width: 0;
   padding: 22px;
   border-right: 1px solid oklch(1 0 0 / 0.1);
+}
+
+.city-strip > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.city-strip > a:hover span {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .city-strip span {
@@ -751,6 +763,17 @@ a { color: inherit; }
 .rank-table .rank-column { width: 88px; }
 .rank-table .block-column { width: 260px; }
 .rank-table .value-column { width: 145px; }
+.club-table .club-lot-column { width: 250px; }
+.club-table .club-address-column { width: 190px; }
+.club-table .value-column { width: 155px; }
+
+.club-table-wrap { overflow-x: auto; }
+.club-table { min-width: 900px; }
+.club-table .rank-number { font-size: 1.25rem; }
+.club-table .rank-value {
+  font-size: 1.55rem;
+  font-weight: 800;
+}
 
 .rank-table th {
   height: 40px;
@@ -828,6 +851,14 @@ a { color: inherit; }
 .rank-address {
   overflow: hidden;
   color: var(--ink-dim);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.club-owner {
+  overflow: hidden;
+  color: var(--ink);
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1297,9 +1328,11 @@ a { color: inherit; }
 .featured-links a:focus-visible,
 .source-link:focus-visible,
 .landing-register-links a:focus-visible,
+.city-strip > a:focus-visible,
 .borough-filters button:focus-visible,
 .rank-search input:focus-visible,
 .rank-table a:focus-visible,
+.thermal-legend a:focus-visible,
 .ghost-rank a:focus-visible,
 .share-actions button:focus-visible,
 .result-footer a:focus-visible,
@@ -1432,6 +1465,11 @@ a { color: inherit; }
   flex-shrink: 0;
   border-radius: 2px;
   outline: 1px solid oklch(1 0 0 / 0.12);
+}
+
+.thermal-legend a {
+  color: inherit;
+  text-underline-offset: 3px;
 }
 
 .thermal-legend .legend-you { background: #2f8aab; }
@@ -1572,7 +1610,11 @@ a { color: inherit; }
   .featured-links a { min-height: 112px; }
 
   .city-strip { grid-template-columns: 1fr; }
-  .city-strip div { border-right: 0; border-bottom: 1px solid oklch(1 0 0 / 0.1); }
+  .city-strip div,
+  .city-strip > a {
+    border-right: 0;
+    border-bottom: 1px solid oklch(1 0 0 / 0.1);
+  }
   .sources-section dl div { grid-template-columns: 1fr; gap: 6px; }
   .top-heading {
     grid-template-columns: 1fr;
@@ -1655,6 +1697,9 @@ a { color: inherit; }
   .rank-table td:nth-child(2) > a strong { font-size: 13px; }
   .rank-address { font-size: 9px; }
   .rank-value { font-size: 1rem; }
+  .club-table th:nth-child(2) { font-size: 7px; }
+  .club-table th:nth-child(2)::after { content: none; }
+  .club-table .rank-value { font-size: 1.35rem; }
   .public-tag {
     margin-left: 4px;
     padding: 0 3px;

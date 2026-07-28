@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { BlockPayload, Lot } from "@/lib/schema";
-import { boroughName } from "@/lib/borough";
+import { boroughName, boroughNumber } from "@/lib/borough";
 import { CANVAS_COLORS, TOKENS } from "@/lib/tokens";
 import { thermalRGB } from "@/lib/viz/color";
 import {
@@ -2279,6 +2279,12 @@ function CanvasBlockViz({
     };
   }, [blind, ghostEnabled, payload]);
 
+  const clubBorough = boroughNumber(payload.borough);
+  const clubHref =
+    clubBorough && payload.lots.some((lot) => lot.club)
+      ? `/club?boro=${clubBorough}&block=${payload.block}`
+      : null;
+
   return (
     <section
       className="viz-shell"
@@ -2391,7 +2397,11 @@ function CanvasBlockViz({
           </span>
           <span>
             <i className="legend-club" />
-            contains a $50M lot
+            {clubHref ? (
+              <a href={clubHref}>contains a $50M lot · club register</a>
+            ) : (
+              "contains a $50M lot"
+            )}
           </span>
           <span className="thermal-ramp" title="Assessed value, cool to warm">
             <em>low</em>
