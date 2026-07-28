@@ -33,6 +33,7 @@ PLUTO_BOROUGH_CODES = {code: boro for boro, code in BOROUGH_CODES.items()}
 TAIL_LIMIT = 120
 CLUB_THRESHOLD = 50_000_000
 MAX_BUCKET_BYTES = 150 * 1024
+MAX_CLUB_LOTS_BYTES = 500 * 1024
 EXPECTED_ROWS = 1_167_962
 EXPECTED_BLOCKS = 28_798
 EXPECTED_TOTAL_MV = 1_911_446_867_962
@@ -103,6 +104,12 @@ class RawRow(NamedTuple):
     rectype: str = "1"
 
 
+def taxable_assessment(act_total: int, act_exempt: int) -> bool:
+    if act_total == 0:
+        return False
+    return act_exempt / act_total < 0.5
+
+
 @dataclass
 class BlockStats:
     total_mv: int = 0
@@ -113,9 +120,7 @@ class BlockStats:
 
     @property
     def taxable(self) -> bool:
-        if self.act_total == 0:
-            return False
-        return self.act_exempt / self.act_total < 0.5
+        return taxable_assessment(self.act_total, self.act_exempt)
 
 
 @dataclass
@@ -132,6 +137,7 @@ class ScanResult:
         default_factory=lambda: {boro: 0 for boro in BOROUGH_CODES}
     )
     blocks: Dict[Tuple[int, int], BlockStats] = field(default_factory=dict)
+    club_records: List[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -228,6 +234,32 @@ def repair_owner(owner: str) -> str:
         ):
             return left + right
     return owner
+
+
+def club_lot_record(row: RawRow) -> Optional[dict]:
+    if row.mv <= CLUB_THRESHOLD or is_pointer(row):
+        return None
+    bbl = f"{row.boro}{row.block:05d}{row.lot:04d}"
+    if not re.fullmatch(r"[1-5]\d{9}", bbl):
+        raise BuildError(
+            f"invalid club-lot BBL components: {row.boro}-{row.block}-{row.lot}"
+        )
+    record = {
+        "bbl": bbl,
+        "boro": row.boro,
+        "block": row.block,
+        "lot": row.lot,
+        "mv": row.mv,
+        "address": " ".join(
+            part for part in (row.housenum.strip(), row.street.strip()) if part
+        ),
+        "bldgClass": row.bldg_class,
+        "taxable": taxable_assessment(row.act_total, row.act_exempt),
+    }
+    owner = repair_owner(row.owner).strip()
+    if owner and owner.upper() != "NAME NOT ON FILE":
+        record["owner"] = owner
+    return record
 
 
 def low_housenum(housenum: str) -> str:
@@ -507,6 +539,10 @@ def scan_inputs(paths: Sequence[Path]) -> ScanResult:
         if row.mv > CLUB_THRESHOLD:
             result.club_lots += 1
             result.club_mv += row.mv
+            record = club_lot_record(row)
+            if record is None:
+                raise BuildError(f"{row.parid}: qualifying club lot was not emitted")
+            result.club_records.append(record)
     return result
 
 
@@ -1124,6 +1160,7 @@ def validate_tree(output_dir: Path, expected_blocks: Optional[int] = None) -> Tu
         "index/block-map.json",
         "index/block-ranks.json",
         "index/city-stats.json",
+        "index/club-lots.json",
         "index/ghost-stats.json",
         "meta.json",
     ):
@@ -1354,9 +1391,26 @@ def build_tree(
             },
         }
         block_ranks.sort(key=lambda item: (-item["m"], item["b"], item["k"]))
+        club_records = sorted(
+            scan.club_records,
+            key=lambda item: (
+                -item["mv"],
+                item["boro"],
+                item["block"],
+                item["lot"],
+            ),
+        )
         _write_json(staged / "index" / "block-map.json", block_map)
         _write_json(staged / "index" / "block-ranks.json", block_ranks)
         _write_json(staged / "index" / "city-stats.json", city_stats)
+        club_bytes = _write_json(
+            staged / "index" / "club-lots.json", club_records
+        )
+        if club_bytes > MAX_CLUB_LOTS_BYTES:
+            raise BuildError(
+                f"club-lots index exceeds {MAX_CLUB_LOTS_BYTES} bytes: "
+                f"{club_bytes}"
+            )
         _write_json(staged / "index" / "ghost-stats.json", ghost_stats)
         _write_json(staged / "meta.json", meta)
         biggest_staged, biggest_bytes = validate_tree(
