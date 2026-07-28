@@ -42,10 +42,10 @@ export default async function Home() {
           <span>NYC tax lots on file</span>
           <strong>{stats.nLots.toLocaleString("en-US")}</strong>
         </div>
-        <div>
+        <a className="city-club-link" href="/club">
           <span>Lots above $50M</span>
           <strong>{stats.clubLots.toLocaleString("en-US")}</strong>
-        </div>
+        </a>
         <div>
           <span>Share of city assessed value</span>
           <strong>{(stats.clubShareOfMv * 100).toFixed(1)}%</strong>

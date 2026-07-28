@@ -2,6 +2,7 @@ import styles from "./siteNav.module.css";
 
 const SURFACES = [
   { href: "/top", label: "Register" },
+  { href: "/club", label: "Club" },
   { href: "/map", label: "Map" },
   { href: "/game", label: "The Game" },
   { href: "/sources", label: "Sources" },
