@@ -81,7 +81,7 @@ export default async function Home() {
       </section>
 
       <section className="sources-section" id="sources">
-        <h2>Every number here is a sum of filed values.</h2>
+        <h2>Two city records underlie every figure here.</h2>
         <p>
           Block totals are sums of lot-level assessed market value on the NYC
           Department of Finance final roll. Condo unit lots sharing a filed
