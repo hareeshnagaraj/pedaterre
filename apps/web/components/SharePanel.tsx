@@ -94,7 +94,7 @@ export function SharePanel(props: SharePanelProps) {
       </div>
       <div className="share-actions">
         <div>
-          <h2 id="share-title">Send the filed version.</h2>
+          <h2 id="share-title">Export this block summary.</h2>
         </div>
         <button type="button" disabled={working} onClick={() => void exportCard()}>
           {working ? "DRAWING CARD…" : "SHARE CARD IMAGE"}

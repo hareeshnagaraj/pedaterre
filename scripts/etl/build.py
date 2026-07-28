@@ -597,7 +597,7 @@ def make_quip(character: str, groups: Sequence[Group], displayed_groups: int) ->
     )
 
     if character == "empty":
-        return "Assessed at zero. The roll has nothing to say here."
+        return "No assessed market value on this roll."
     if character == "single":
         return "One lot. The whole block. One line in the roll."
     if character == "whale":

@@ -10,6 +10,7 @@ import {
   setMapViewSearch,
   spatialCandidates,
 } from "../lib/cityMap.ts";
+import { MAP_PINS, mapPinLabel } from "../lib/mapPins.ts";
 
 const columns = {
   b: [1, 2],
@@ -36,6 +37,30 @@ test("decodes aligned map columns and ranks either measure", () => {
   assert.deepEqual(
     rankMapBlocks(blocks, "total", 2).map((block) => block.block),
     [2490],
+  );
+});
+
+test("derives pin superlatives from the current map data", () => {
+  const [jfk, yankeeStadium, centralPark, block995] = MAP_PINS;
+  assert.equal(
+    mapPinLabel(jfk, { rank: 1, density: 84.4 }, 22_060.8),
+    "JFK AIRPORT · FIRST ON THE REGISTER",
+  );
+  assert.equal(
+    mapPinLabel(block995, { rank: 11, density: 22_060.8 }, 22_060.8),
+    "BLOCK 995 · HIGHEST VALUE PER LAND SQ FT",
+  );
+  assert.equal(
+    mapPinLabel(jfk, { rank: 2, density: 84.4 }, 22_060.8),
+    "JFK AIRPORT",
+  );
+  assert.equal(
+    mapPinLabel(yankeeStadium, { rank: 500, density: 158.7 }, 22_060.8),
+    "YANKEE STADIUM",
+  );
+  assert.equal(
+    mapPinLabel(centralPark, { rank: 4, density: 200.4 }, 22_060.8),
+    "CENTRAL PARK",
   );
 });
 
