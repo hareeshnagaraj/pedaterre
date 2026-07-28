@@ -188,7 +188,7 @@ function generatedQuip(payload: ShareCardPayload): string {
     case "single":
       return "One lot. The whole block. One line in the roll.";
     case "empty":
-      return "Assessed at zero. The roll has nothing to say here.";
+      return "No assessed market value on this roll.";
   }
 }
 

@@ -422,7 +422,7 @@ class RuleTests(unittest.TestCase):
         )
         self.assertEqual(
             build.make_quip("empty", [build.Group(mv=0, n=1)], 1),
-            "Assessed at zero. The roll has nothing to say here.",
+            "No assessed market value on this roll.",
         )
 
 

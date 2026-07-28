@@ -39,7 +39,8 @@ export default async function TopBlocksPage() {
           </h1>
           <p>
             Every block on the filed roll, ordered by total assessed market
-            value. PUBLIC marks government and exempt-dominated blocks.
+            value. PUBLIC marks blocks whose exempt value is at least half of
+            assessed value.
           </p>
         </div>
         <dl>

@@ -66,7 +66,7 @@ meta.json only).
     - spread, no club: `{g} property groups. The top one is {m}× the median holding here.`
     - flat: `No towers here — {g} holdings within {x}× of each other. The roll calls that balance.`
     - single: `One lot. The whole block. One line in the roll.`
-    - empty: `Assessed at zero. The roll has nothing to say here.`
+    - empty: `No assessed market value on this roll.`
 
 ## Outputs → `data/generated/`
 - `buckets/{boro}/{block//10}.json` — object keyed by block number string,
