@@ -13,6 +13,7 @@ export interface DemoLink {
 
 export interface BlockMissingStateProps {
   blockLabel: string;
+  rollYear: string;
   newSearchHref?: string;
   demoLinks: DemoLink[];
   focusTargetRef?: Ref<HTMLHeadingElement>;
@@ -20,6 +21,7 @@ export interface BlockMissingStateProps {
 
 export function BlockMissingState({
   blockLabel,
+  rollYear,
   newSearchHref = "/",
   demoLinks,
   focusTargetRef = focusRef,
@@ -27,8 +29,7 @@ export function BlockMissingState({
   return (
     <StateFrame
       focusRef={focusTargetRef}
-      eyebrow="ROLL NOTICE"
-      title="NO PARCEL ON FILE — this block is not in the FY2027 roll"
+      title={`NO PARCEL ON FILE — this block is not in the ${rollYear} roll`}
       role="alert"
       live="assertive"
     >

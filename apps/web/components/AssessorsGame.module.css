@@ -46,15 +46,6 @@
   letter-spacing: 0.05em;
 }
 
-.instruction {
-  max-width: 760px;
-  margin: 0;
-  padding: 18px 0 14px;
-  color: var(--ink-dim);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
 .pair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -343,10 +334,6 @@ button.choice:hover .chooseCta {
 
   .registerLine p strong {
     overflow-wrap: anywhere;
-  }
-
-  .instruction {
-    padding: 14px 0 12px;
   }
 
   .pair {

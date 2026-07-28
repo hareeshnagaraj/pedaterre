@@ -603,10 +603,7 @@ def make_quip(character: str, groups: Sequence[Group], displayed_groups: int) ->
     if character == "whale":
         percent = round(share * 100)
         if share >= 0.45:
-            return (
-                f"One building is {percent}% of the block's assessed value. "
-                "Everyone else is a row house in its shadow."
-            )
+            return f"One building is {percent}% of the block's assessed value."
         return f"The largest holding here carries {percent}% of the block."
     if character == "spread" and club_groups:
         return (
@@ -623,8 +620,8 @@ def make_quip(character: str, groups: Sequence[Group], displayed_groups: int) ->
     if character == "flat":
         spread = max(positive) / min(positive)
         return (
-            f"No towers here — {displayed_groups} holdings within "
-            f"{_ratio_text(spread)}× of each other. The roll calls that balance."
+            f"{displayed_groups} holdings, all within "
+            f"{_ratio_text(spread)}× of each other. No single filing dominates."
         )
     raise BuildError(f"unknown block character: {character}")
 
@@ -1315,6 +1312,7 @@ def build_tree(
                 else 0.0
             ),
             "nBlocks": len(scan.blocks),
+            "nLocatedBlocks": blocks_with_coordinates,
             "nLots": scan.n_lots,
             "boroughTotals": {
                 BOROUGH_CODES[boro]: scan.borough_totals[boro]

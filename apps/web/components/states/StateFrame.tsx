@@ -6,7 +6,7 @@ import { stateTokenStyle } from "./stateTokens";
 
 interface StateFrameProps {
   focusRef: Ref<HTMLHeadingElement>;
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   children?: ReactNode;
   role?: "status" | "alert";
@@ -33,7 +33,7 @@ export function StateFrame({
       aria-busy={busy}
     >
       <div className={styles.notice}>
-        <p className={styles.eyebrow}>{eyebrow}</p>
+        {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
         <h2 className={styles.title} ref={focusRef} tabIndex={-1}>
           {title}
         </h2>

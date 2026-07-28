@@ -100,7 +100,7 @@ export default async function BlockPage({ params }: BlockPageProps) {
             {String(parsed.block).padStart(5, "0")} · final assessment roll
           </p>
         </div>
-        <span className="live-badge">LIVE · FY2027</span>
+        <span className="live-badge">LIVE · {stats.rollYear}</span>
       </section>
 
       <Suspense
@@ -116,6 +116,7 @@ export default async function BlockPage({ params }: BlockPageProps) {
           curatedLinks={curatedLinks}
           ghostCaveat={ghostStats.caveat}
           empireStateSqft={ghostStats.empireStateSqft}
+          rollYear={stats.rollYear}
         />
       </Suspense>
     </main>

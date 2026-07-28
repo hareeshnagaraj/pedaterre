@@ -37,6 +37,7 @@ interface BlockResultClientProps {
   curatedLinks: BlockPick[];
   ghostCaveat: string;
   empireStateSqft: number;
+  rollYear: string;
 }
 
 function requestedLotFrom(value: string | null): number | null {
@@ -51,6 +52,7 @@ export function BlockResultClient({
   curatedLinks,
   ghostCaveat,
   empireStateSqft,
+  rollYear,
 }: BlockResultClientProps) {
   const searchParams = useSearchParams();
   const lotValue = searchParams.get("lot");
@@ -107,6 +109,7 @@ export function BlockResultClient({
     return (
       <BlockMissingState
         blockLabel={requestedLabel}
+        rollYear={rollYear}
         focusTargetRef={focusRef}
         demoLinks={curatedLinks.map((pick) => ({
           href: `/b/${boroughNumber(pick.borough)}/${pick.block}`,
@@ -144,7 +147,9 @@ export function BlockResultClient({
         <dl className="headline-stats">
           <div>
             <dt>assessed market value</dt>
-            <dd>{formatAssessedValue(payload.totalMv)}</dd>
+            <dd className="assessed-value">
+              {formatAssessedValue(payload.totalMv)}
+            </dd>
           </div>
           <div>
             <dt>largest group share</dt>

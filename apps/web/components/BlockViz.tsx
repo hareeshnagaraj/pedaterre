@@ -106,7 +106,7 @@ function EmptyBlockViz({
     >
       <div className="viz-toolbar">
         <div className="viz-toolbar-title">
-          No assessed value · <strong>empty character</strong>
+          No assessed value on this roll
         </div>
         <div className="mode-switch" role="tablist" aria-label="Visualization mode">
           <button
@@ -132,7 +132,6 @@ function EmptyBlockViz({
       <div className={`iso-panel${thermal ? " is-thermal" : ""}`} role="tabpanel">
         <div className="empty-character">
           <div>
-            <div className="empty-character-mark" aria-hidden="true" />
             <h2>No assessed value on this roll</h2>
             <p>
               The tax lot is present in the final roll, but its filed assessed
@@ -1990,7 +1989,7 @@ function CanvasBlockViz({
       const permitted = state.ghostTarget === 1;
       title.innerHTML =
         payload.totalMv === 0 && !permitted
-          ? "No assessed value · <strong>empty character</strong>"
+          ? "No assessed value on this roll"
           : permitted
             ? "Skyline · <strong>solid = assessed value · glass = unbuilt capacity</strong>"
             : "Skyline · <strong>height = assessed value</strong>";
@@ -2035,7 +2034,7 @@ function CanvasBlockViz({
       if (isThermal) {
         title.innerHTML =
           payload.totalMv === 0
-            ? "No assessed value · <strong>empty character</strong>"
+            ? "No assessed value on this roll"
             : "Thermal · <strong>area = share of block value</strong>";
       } else {
         updateSkylineChrome();
@@ -2370,7 +2369,6 @@ function CanvasBlockViz({
             ref={emptyOverlayRef}
           >
             <div>
-              <div className="empty-character-mark" aria-hidden="true" />
               <h2>No assessed value on this roll</h2>
               <p>
                 The tax lot is present in the final roll, but its filed

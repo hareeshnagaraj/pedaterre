@@ -68,7 +68,7 @@ export function SharePanel(props: SharePanelProps) {
     setNotice("");
     try {
       const result = await copyLink(window.location.href);
-      setNotice(result.message ?? "Link copied.");
+      if (result.message) setNotice(result.message);
     } catch {
       setNotice("LINK DESK UNAVAILABLE — copy the address bar.");
     }
@@ -94,7 +94,6 @@ export function SharePanel(props: SharePanelProps) {
       </div>
       <div className="share-actions">
         <div>
-          <p className="eyebrow">SHARE CARD</p>
           <h2 id="share-title">Send the filed version.</h2>
         </div>
         <button type="button" disabled={working} onClick={() => void exportCard()}>

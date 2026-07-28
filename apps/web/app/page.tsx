@@ -2,6 +2,7 @@ import { AddressSearch } from "@/components/AddressSearch";
 import { DemoRedirect } from "@/components/DemoRedirect";
 import { boroughNumber } from "@/lib/borough";
 import { getCityStats } from "@/lib/publishedData";
+import { formatAssessedValue } from "@/lib/share/cardModel";
 import { SiteNav } from "@/components/SiteNav";
 
 export const dynamic = "force-static";
@@ -19,7 +20,7 @@ export default async function Home() {
       <SiteNav />
 
       <section className="landing-hero" aria-labelledby="landing-title">
-        <p className="eyebrow">NYC FY2027 FINAL ASSESSMENT ROLL</p>
+        <p className="eyebrow">NYC {stats.rollYear} FINAL ASSESSMENT ROLL</p>
         <h1 id="landing-title">See the money on your block.</h1>
         <p className="landing-deck">
           Look up a New York City address. We will pull its tax block, total
@@ -27,31 +28,16 @@ export default async function Home() {
         </p>
         <AddressSearch />
         <p className="honesty-line">
-          Assessed market value. Not a sale price, appraisal, or Zestimate.
+          Assessed market value. Not a sale price, appraisal, or a market
+          estimate.
         </p>
       </section>
 
-      <section className="featured-blocks" aria-labelledby="featured-title">
-        <div>
-          <p className="eyebrow">FROM THE LIVE ROLL</p>
-          <h2 id="featured-title">Open a block with paperwork.</h2>
-        </div>
-        <div className="featured-links">
-          {featuredBlocks.map((pick) => (
-            <a
-              href={`/b/${pick.boro}/${pick.block}`}
-              key={`${pick.borough}-${pick.block}`}
-            >
-              <span>{pick.addressHint || `${pick.borough} Block ${pick.block}`}</span>
-              <strong>
-                {pick.borough} · BLOCK {pick.block}
-              </strong>
-            </a>
-          ))}
-        </div>
-      </section>
-
       <section className="city-strip" aria-label="Citywide assessment summary">
+        <div className="city-total">
+          <span>Citywide assessed value</span>
+          <strong>{formatAssessedValue(stats.totalMv)}</strong>
+        </div>
         <div>
           <span>NYC tax lots on file</span>
           <strong>{stats.nLots.toLocaleString("en-US")}</strong>
@@ -69,9 +55,33 @@ export default async function Home() {
         </p>
       </section>
 
+      <section className="featured-blocks" aria-labelledby="featured-title">
+        <div>
+          <h2 id="featured-title">Open a block with paperwork.</h2>
+        </div>
+        <div className="featured-links">
+          {featuredBlocks.map((pick) => (
+            <a
+              href={`/b/${pick.boro}/${pick.block}`}
+              key={`${pick.borough}-${pick.block}`}
+            >
+              <strong>{formatAssessedValue(pick.totalM * 1_000_000)}</strong>
+              <span>
+                {pick.addressHint || `${pick.borough} Block ${pick.block}`}
+              </span>
+              <span className="featured-owner">
+                {pick.owner || "OWNER NOT LISTED"}
+              </span>
+              <small>
+                {pick.borough} · BLOCK {pick.block}
+              </small>
+            </a>
+          ))}
+        </div>
+      </section>
+
       <section className="sources-section" id="sources">
-        <p className="eyebrow">SOURCES &amp; VERIFICATION</p>
-        <h2>Filed values, named plainly.</h2>
+        <h2>Every number here is a sum of filed values.</h2>
         <p>
           Block totals are sums of lot-level assessed market value on the NYC
           Department of Finance final roll. Condo unit lots sharing a filed
@@ -100,23 +110,37 @@ export default async function Home() {
         </a>
       </section>
 
-      <nav className="landing-footer" aria-label="Site sections">
-        <a href="/top">
-          <strong>CITY REGISTER</strong>
-          <span>Every block, ranked as filed.</span>
-        </a>
-        <a href="/map">
-          <strong>CITY MAP</strong>
-          <span>The city drawn from its own roll.</span>
-        </a>
-        <a href="/game">
-          <strong>THE ASSESSOR&apos;S GAME</strong>
-          <span>Two blocks. Select the higher filing.</span>
-        </a>
-        <a href="/sources">
-          <strong>SOURCES &amp; VERIFICATION</strong>
-          <span>Every figure, defined and sourced.</span>
-        </a>
+      <nav className="landing-register-links" aria-label="Site sections">
+        <ul>
+          <li>
+            <a href="/top">
+              Register
+              <span>· {stats.nBlocks.toLocaleString("en-US")} blocks</span>
+            </a>
+          </li>
+          <li>
+            <a href="/map">
+              Map
+              <span>
+                · {stats.nLocatedBlocks.toLocaleString("en-US")} located
+              </span>
+            </a>
+          </li>
+          <li>
+            <a href="/game">
+              Game
+              <span>
+                · {stats.nBlocks.toLocaleString("en-US")} blocks on roll
+              </span>
+            </a>
+          </li>
+          <li>
+            <a href="/sources">
+              Sources
+              <span>· {stats.nLots.toLocaleString("en-US")} tax lots</span>
+            </a>
+          </li>
+        </ul>
       </nav>
     </main>
   );

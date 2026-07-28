@@ -10,7 +10,7 @@ import { SearchErrorState } from "./SearchErrorState";
 import styles from "./states.module.css";
 import { stateTokenStyle } from "./stateTokens";
 
-export default function StatesDevPage() {
+export default function StatesDevPage({ rollYear }: { rollYear: string }) {
   return (
     <main className={styles.devPage} style={stateTokenStyle}>
       <header className={styles.devPageHeader}>
@@ -23,6 +23,7 @@ export default function StatesDevPage() {
       <SearchErrorState query="200 E 66th St" />
       <BlockMissingState
         blockLabel="Queens · Block 99999"
+        rollYear={rollYear}
         demoLinks={[
           { href: "/b/MN/1111", label: "CENTRAL PARK" },
           { href: "/b/SI/245", label: "STATEN ISLAND 245" },

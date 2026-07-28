@@ -109,24 +109,20 @@ const CAVEATS = [
   "Unbuilt capacity is an as-of-right envelope and nothing more. It ignores overlays, special districts, landmark status, transferred air rights, and lot mergers. A lot showing capacity may have no legal way to use it. We do not convert that square footage into dollars, because the price per buildable foot is a modelling assumption and not a figure on the roll.",
   "Condo billing lots that carry no value are pointer records in the roll. They are excluded from totals so that units are not counted twice, and kept only to resolve a searched address to its building.",
   "Lots assessed at zero exist, and so do blocks that total zero. They are drawn as such rather than hidden.",
-  "This is the filed roll, not an argument about it. Assessments are appealed, corrected, and revised; what you see is what was filed for the year named below.",
+  "Assessments are appealed, corrected, and revised; what you see is what was filed for the year named below.",
 ];
 
 export default async function SourcesPage() {
   const stats = await getCityStats();
 
   return (
-    <>
+    <main className={`sources-section ${styles.page}`}>
       <SiteNav current="/sources" />
-      <main className={`sources-section ${styles.page}`}>
       <section>
-        <p className="eyebrow">SOURCES &amp; VERIFICATION</p>
-        <h2>Filed values, named plainly.</h2>
+        <h2>Every number here is a sum of filed values.</h2>
         <p>
           Every number on this site is a sum, a rank, or a ratio of figures
-          filed on the New York City assessment roll. Nothing is estimated,
-          modelled, or inferred. Where a figure required a decision on our
-          part, that decision is written down here.
+          filed on the New York City assessment roll.
         </p>
 
         <h3>What each figure means</h3>
@@ -181,7 +177,6 @@ export default async function SourcesPage() {
           {stats.nBlocks.toLocaleString("en-US")} blocks
         </p>
       </section>
-      </main>
-    </>
+    </main>
   );
 }

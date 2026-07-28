@@ -28,7 +28,7 @@
 .table th,
 .queryLabel,
 .contextLabel {
-  font-family: var(--num);
+  font-family: var(--font-barlow), var(--num);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -141,59 +141,6 @@
   font: 500 16px var(--font);
 }
 
-.silhouette {
-  position: relative;
-  display: flex;
-  min-height: 210px;
-  align-items: end;
-  gap: 3%;
-  overflow: hidden;
-  padding: 28px 8% 0;
-  border-bottom: 1px solid var(--ink-dim);
-  background: color-mix(in srgb, var(--ink) 3%, var(--void));
-}
-
-.silhouette::after {
-  position: absolute;
-  inset: auto 0 0;
-  height: 28%;
-  background: color-mix(in srgb, var(--ink) 5%, var(--void));
-  content: "";
-}
-
-.tower {
-  position: relative;
-  z-index: 1;
-  width: 9%;
-  border: 1px solid var(--ink-dim);
-  border-bottom: 0;
-  background: color-mix(in srgb, var(--ink) 11%, var(--void));
-}
-
-.tower:nth-child(1) {
-  height: 28%;
-}
-
-.tower:nth-child(2) {
-  height: 52%;
-}
-
-.tower:nth-child(3) {
-  height: 38%;
-}
-
-.tower:nth-child(4) {
-  height: 72%;
-}
-
-.tower:nth-child(5) {
-  height: 44%;
-}
-
-.tower:nth-child(6) {
-  height: 31%;
-}
-
 .partial {
   position: sticky;
   z-index: 2;
@@ -205,7 +152,7 @@
   border: 1px solid var(--stamp);
   background: var(--paper);
   color: var(--paper-ink);
-  font-family: var(--num);
+  font-family: var(--font-barlow), var(--num);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -246,7 +193,7 @@
 .numericRank {
   margin: 0;
   color: var(--stamp);
-  font-family: var(--num);
+  font-family: var(--font-barlow), var(--num);
   font-size: 22px;
   font-weight: 700;
 }
@@ -294,7 +241,7 @@
 
 .devPageHeader h1 {
   margin: 0;
-  font-family: var(--num);
+  font-family: var(--font-barlow), var(--num);
   font-size: clamp(42px, 8vw, 82px);
   line-height: 0.9;
   text-transform: uppercase;

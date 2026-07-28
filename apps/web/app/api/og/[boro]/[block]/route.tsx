@@ -1,6 +1,7 @@
 import { ImageResponse } from "@vercel/og";
 import {
   buildShareCardModel,
+  compactRollYear,
   type ShareCardPayload,
 } from "../../../../../lib/share/cardModel";
 import {
@@ -14,6 +15,7 @@ import {
 } from "../../../../../lib/share/cardLayout";
 import {
   loadBlockForOg,
+  loadRollYearForOg,
   normalizedBorough,
   silhouetteBars,
   topGroupValues,
@@ -28,33 +30,38 @@ type RouteContext = {
   params: Promise<{ boro: string; block: string }>;
 };
 
-function genericModel() {
+function genericModel(rollYear: string | null) {
+  const filedRoll = rollYear ? ` · ${rollYear}` : "";
+  const stampYear = rollYear ? `-${compactRollYear(rollYear)}` : "";
   return {
-    where: "NEW YORK CITY · FY2027",
+    where: `NEW YORK CITY${filedRoll}`,
     subline: "ASSESSMENT ROLL NOTICE",
     dollars: "parcel not on file",
     rank: "Search another borough and block",
     quip: "The requested block does not appear in this assessment roll.",
     addressedLot: null,
-    stamp: "PD-NYC-FY27",
+    stamp: `PD-NYC${stampYear}`,
     source: "DOF assessed market value · not sale price · nyc.gov/finance",
   };
 }
 
-function receiptModel(payload: OgBlockPayload | null) {
+function receiptModel(payload: OgBlockPayload | null, rollYear: string | null) {
   return payload
     ? buildShareCardModel(payload as ShareCardPayload)
-    : genericModel();
+    : genericModel(rollYear);
 }
 
-function OgCard({ payload }: { payload: OgBlockPayload | null }) {
-  const model = receiptModel(payload);
+function OgCard({
+  payload,
+  rollYear,
+}: {
+  payload: OgBlockPayload | null;
+  rollYear: string | null;
+}) {
+  const model = receiptModel(payload, rollYear);
   const geometry = receiptGeometry(Boolean(model.addressedLot));
   const receipt = CARD_LAYOUT.receipt;
-  const values = payload
-    ? topGroupValues(payload)
-    : [9, 5, 14, 7, 20, 11, 4, 8];
-  const bars = silhouetteBars(values);
+  const bars = payload ? silhouetteBars(topGroupValues(payload)) : [];
 
   return (
     <div
@@ -79,51 +86,57 @@ function OgCard({ payload }: { payload: OgBlockPayload | null }) {
           overflow: "hidden",
         }}
       >
-        <svg
-          width="560"
-          height="430"
-          viewBox="0 0 560 430"
-          aria-label="Assessed-value skyline"
-        >
-          <rect
-            x="0"
-            y="426"
-            width="560"
-            height="4"
-            fill={CARD_TOKENS.inkDim}
-            opacity="0.45"
-          />
-          {bars.map((bar, index) => (
-            <rect
-              key={`${bar.x}-${index}`}
-              x={bar.x}
-              y={bar.y}
-              width={bar.width}
-              height={bar.height}
-              fill={
-                index === 0 ? CARD_TOKENS.gold : RECEIPT_TOKENS.skylineBuilding
-              }
-              stroke={CARD_TOKENS.inkDim}
-              strokeWidth="2"
-            />
-          ))}
-        </svg>
-        <div
-          style={{
-            position: "absolute",
-            left: "48px",
-            top: "45px",
-            display: "flex",
-            fontFamily: CARD_TOKENS.num,
-            fontSize: "18px",
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: CARD_TOKENS.inkDim,
-          }}
-        >
-          VALUE SKYLINE · TOP 12 GROUPS
-        </div>
+        {payload ? (
+          <>
+            <svg
+              width="560"
+              height="430"
+              viewBox="0 0 560 430"
+              aria-label="Assessed-value skyline"
+            >
+              <rect
+                x="0"
+                y="426"
+                width="560"
+                height="4"
+                fill={CARD_TOKENS.inkDim}
+                opacity="0.45"
+              />
+              {bars.map((bar, index) => (
+                <rect
+                  key={`${bar.x}-${index}`}
+                  x={bar.x}
+                  y={bar.y}
+                  width={bar.width}
+                  height={bar.height}
+                  fill={
+                    index === 0
+                      ? CARD_TOKENS.gold
+                      : RECEIPT_TOKENS.skylineBuilding
+                  }
+                  stroke={CARD_TOKENS.inkDim}
+                  strokeWidth="2"
+                />
+              ))}
+            </svg>
+            <div
+              style={{
+                position: "absolute",
+                left: "48px",
+                top: "45px",
+                display: "flex",
+                fontFamily: CARD_TOKENS.num,
+                fontSize: "18px",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: CARD_TOKENS.inkDim,
+              }}
+            >
+              VALUE SKYLINE · TOP 12 GROUPS
+            </div>
+          </>
+        ) : null}
       </div>
 
       <div
@@ -307,8 +320,11 @@ export async function GET(request: Request, context: RouteContext) {
     borough && validBlock
       ? await loadBlockForOg(new URL(request.url).origin, borough, block)
       : null;
+  const rollYear =
+    payload?.rollYear ??
+    (await loadRollYearForOg(new URL(request.url).origin));
 
-  return new ImageResponse(<OgCard payload={payload} />, {
+  return new ImageResponse(<OgCard payload={payload} rollYear={rollYear} />, {
     width: CARD_LAYOUT.width,
     height: CARD_LAYOUT.height,
     status: payload ? 200 : 404,

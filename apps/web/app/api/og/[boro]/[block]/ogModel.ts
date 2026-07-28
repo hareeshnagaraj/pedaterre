@@ -11,6 +11,7 @@ export interface OgBlockPayload {
   block: number;
   totalMv: number;
   character: "whale" | "spread" | "flat" | "single" | "empty";
+  rollYear: string;
   lots: OgLot[];
 }
 
@@ -167,6 +168,23 @@ export async function loadBlockForOg(
       borough,
       block,
     );
+  } catch {
+    return null;
+  }
+}
+
+export async function loadRollYearForOg(
+  origin: string,
+  fetcher: typeof fetch = fetch,
+): Promise<string | null> {
+  try {
+    const url = new URL("/data/city-stats.json", new URL(origin).origin);
+    const response = await fetcher(url, { cache: "force-cache" });
+    if (!response.ok) return null;
+    const value = (await response.json()) as { rollYear?: unknown };
+    return typeof value.rollYear === "string" && value.rollYear.trim()
+      ? value.rollYear.trim()
+      : null;
   } catch {
     return null;
   }

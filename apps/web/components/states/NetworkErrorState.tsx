@@ -20,7 +20,6 @@ export function NetworkErrorState({
   return (
     <StateFrame
       focusRef={focusTargetRef}
-      eyebrow="CONNECTION NOTICE"
       title="ROLL REQUEST INTERRUPTED"
       role="alert"
       live="assertive"

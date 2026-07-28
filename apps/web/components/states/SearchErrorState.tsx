@@ -30,7 +30,6 @@ export function SearchErrorState({
   return (
     <StateFrame
       focusRef={focusTargetRef}
-      eyebrow="SEARCH NOTICE"
       title="SEARCH UNAVAILABLE"
       role="alert"
       live="assertive"

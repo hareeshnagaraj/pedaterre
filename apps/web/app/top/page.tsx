@@ -56,12 +56,10 @@ export default async function TopBlocksPage() {
         </dl>
       </section>
 
-      <section
-        className="ghost-citywide"
-        aria-labelledby="ghost-citywide-title"
-      >
+      <BlockRankList expectedCount={stats.nBlocks} />
+
+      <section className="ghost-citywide" aria-labelledby="ghost-citywide-title">
         <header>
-          <p className="eyebrow">THE GHOST CITY</p>
           <h2 id="ghost-citywide-title">
             {formatSquareFeet(ghostStats.citywide.capacitySqft)} UNBUILT
           </h2>
@@ -119,7 +117,6 @@ export default async function TopBlocksPage() {
         <p className="ghost-caveat">{ghostStats.caveat}</p>
       </section>
 
-      <BlockRankList expectedCount={stats.nBlocks} />
     </main>
   );
 }

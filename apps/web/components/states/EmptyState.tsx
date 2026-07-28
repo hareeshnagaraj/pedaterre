@@ -20,7 +20,6 @@ export function EmptyState({
   return (
     <StateFrame
       focusRef={focusTargetRef}
-      eyebrow="SEARCH NOTICE"
       title="NO NYC ADDRESS MATCH"
     >
       <p className={styles.query}>
