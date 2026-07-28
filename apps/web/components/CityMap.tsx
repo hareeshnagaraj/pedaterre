@@ -19,7 +19,7 @@ import {
   type MapBoroughFilter,
   type MapMetric,
 } from "@/lib/cityMap";
-import { MAP_PINS } from "@/lib/mapPins";
+import { MAP_PINS, mapPinLabel } from "@/lib/mapPins";
 import { formatAssessedValue } from "@/lib/share/cardModel";
 import { thermalRampRGB } from "@/lib/viz/color";
 
@@ -182,6 +182,8 @@ export function CityMap({ registerCount }: CityMapProps) {
     const blockByKey = new Map(
       blocks.map((block) => [cityBlockKey(block.boro, block.block), block]),
     );
+    const highestDensity =
+      rankMapBlocks(blocks, "density", "ALL", 1)[0]?.density ?? null;
     const search = new URLSearchParams(window.location.search);
     const focus =
       /^[1-5]$/.test(search.get("b") ?? "") &&
@@ -269,6 +271,7 @@ export function CityMap({ registerCount }: CityMapProps) {
       for (const pin of MAP_PINS) {
         const block = blockByKey.get(cityBlockKey(pin.boro, pin.block));
         if (!block || !active(block)) continue;
+        const label = mapPinLabel(pin, block, highestDensity);
         const point = toScreen(block);
         if (
           point.x < 0 ||
@@ -279,7 +282,7 @@ export function CityMap({ registerCount }: CityMapProps) {
           continue;
         }
 
-        const boxWidth = ctx.measureText(pin.label).width + 14;
+        const boxWidth = ctx.measureText(label).width + 14;
         const boxHeight = 20;
         if (
           boxWidth > state.width - 12 ||
@@ -332,7 +335,7 @@ export function CityMap({ registerCount }: CityMapProps) {
         ctx.strokeStyle = "rgba(239,233,221,0.2)";
         ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
         ctx.fillStyle = "rgba(239,233,221,0.92)";
-        ctx.fillText(pin.label, box.x + 7, box.y + box.h / 2);
+        ctx.fillText(label, box.x + 7, box.y + box.h / 2);
       }
       ctx.restore();
     }

@@ -6,7 +6,7 @@ import { SiteNav } from "@/components/SiteNav";
 export const metadata: Metadata = {
   title: "pedaterre · sources & verification",
   description:
-    "Every figure on pedaterre, its definition, and the filed record it comes from.",
+    "Definitions and source records for filed inputs and documented derivations.",
 };
 
 interface Claim {
@@ -48,7 +48,7 @@ const CLAIMS: Claim[] = [
   {
     claim: "PUBLIC tag",
     definition:
-      "Blocks where exempt value is at least half of assessed value. Marked on the register and held out of the taxable ranking, so airports and parkland do not crowd out privately held blocks.",
+      "Blocks whose exempt value is at least half of assessed value. Marked on the register and held out of the taxable ranking.",
     source: "DOF exempt value",
   },
   {
@@ -119,10 +119,11 @@ export default async function SourcesPage() {
     <main className={`sources-section ${styles.page}`}>
       <SiteNav current="/sources" />
       <section>
-        <h2>Every number here is a sum of filed values.</h2>
+        <h2>Two city records underlie this site.</h2>
         <p>
-          Every number on this site is a sum, a rank, or a ratio of figures
-          filed on the New York City assessment roll.
+          Assessment values and exemptions come from the Department of Finance.
+          Coordinates, lot area, and zoning capacity come from PLUTO. Rankings,
+          groupings, and ratios are derived as documented below.
         </p>
 
         <h3>What each figure means</h3>
