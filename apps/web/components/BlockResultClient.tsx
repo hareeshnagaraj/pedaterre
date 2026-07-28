@@ -209,6 +209,8 @@ export function BlockResultClient({
           <p>
             Schematic placement, ordered by lot number, not a cadastral map.
             Heights and areas use DOF assessed market value, not a sale price.
+            Building form — floors, setbacks, windows — is illustrative; only
+            height and area carry a filed figure.
           </p>
           <p>
             {payload.rollYear} final roll · extract {payload.extractHash}
