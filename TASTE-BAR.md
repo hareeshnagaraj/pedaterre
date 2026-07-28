@@ -95,6 +95,29 @@ estimated figure is a violation regardless of how reasonable the model is.
 
 ---
 
+## PERMITTED BY EXCEPTION
+
+**E1 · Illustrative building form.** The isometric massing may render
+architectural detail that no record supplies — floor divisions, setbacks,
+window grids, lit panes. This is the ratified craft of the design mock and
+it is what separates the drawing from a bar chart.
+
+The exception is narrow and comes with a duty. **Only height and area
+encode a filed figure. Everything else about a building's form is
+illustration and must be labelled as such on any surface that renders it.**
+A viewer must never be able to mistake a window count, a floor count, or a
+setback for data. Extending the encoding — colouring windows by tax class,
+sizing setbacks by exemption — voids this exception and becomes an A9
+violation, because the viewer would then be reading meaning that is not
+there.
+
+Ruled 2026-07-28 after a cross-model lens cited PRIORITIZE 1 against the
+massing and recommended stripping it to plain cuboids. Rejected: the bar's
+own A9 permits documented derivation, and the fix for undisclosed
+illustration is disclosure, not deletion.
+
+---
+
 ## METHOD (inherited from `tavisi-brand-review-routine`)
 
 - **Ground-truth verification is mandatory.** Open the source and measure.

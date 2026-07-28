@@ -60,6 +60,8 @@ export function FixtureView({ payload }: { payload: BlockPayload }) {
       <footer className="result-footer">
         <p>
           Schematic placement, ordered by lot number, not a cadastral map.
+          Building form is illustrative; only height and area carry a filed
+          figure.
           Heights and areas use DOF assessed market value, not a sale price.
         </p>
         <p>
