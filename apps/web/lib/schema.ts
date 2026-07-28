@@ -12,6 +12,7 @@ export const lotSchema = z.object({
   you: z.boolean().optional(),
   club: z.boolean().optional(),
   zero: z.boolean().optional(),
+  builtSqft: z.number().int().nonnegative().nullable().optional(),
   ghost: z.number().int().nonnegative().nullable().optional(),
 });
 

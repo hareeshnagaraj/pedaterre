@@ -7,6 +7,7 @@ import {
   formatSquareFeet,
   ghostHeight,
   hasGhostMassing,
+  medianBuiltHeight,
   permittedHeight,
 } from "../lib/viz/ghost.ts";
 import { hScale } from "../lib/viz/projection.ts";
@@ -18,18 +19,31 @@ const lot: Lot = {
   r: 0,
   v: 20,
   nLots: 1,
+  builtSqft: 2_000_000,
   ghost: 1_000_000,
 };
 
-test("ghost height uses the skyline scale without inheriting its minimum", () => {
-  assert.equal(ghostHeight(0), 0);
-  assert.equal(ghostHeight(null), 0);
+test("ghost height uses built area and clamps the permitted ratio", () => {
+  const medianHeight = medianBuiltHeight([lot]);
+  assert.equal(ghostHeight({ ...lot, ghost: 0 }, medianHeight), 0);
+  assert.equal(ghostHeight({ ...lot, ghost: null }, medianHeight), 0);
+  assert.equal(ghostHeight(lot, medianHeight), builtHeight(lot) * 0.5);
+  assert.ok(ghostHeight(lot, medianHeight) > 0);
+
+  const clamped = { ...lot, builtSqft: 1, ghost: 10_000_000 };
+  assert.equal(ghostHeight(clamped, medianHeight), builtHeight(lot) * 3);
   assert.equal(
-    ghostHeight(1_000_000),
-    hScale(1) - hScale(Number.MIN_VALUE),
+    permittedHeight(lot, medianHeight),
+    builtHeight(lot) + ghostHeight(lot, medianHeight),
   );
-  assert.equal(permittedHeight(lot), builtHeight(lot) + ghostHeight(lot.ghost));
-  assert.ok(permittedHeight(lot) > builtHeight(lot));
+});
+
+test("vacant capacity falls back to half the block median height", () => {
+  const medianHeight = hScale(20);
+  const vacant = { ...lot, v: 0, builtSqft: 0, ghost: 100_000 };
+  assert.equal(builtHeight(vacant), 0);
+  assert.equal(ghostHeight(vacant, medianHeight), medianHeight * 0.5);
+  assert.ok(permittedHeight(vacant, medianHeight) > 0);
 });
 
 test("ghost rendering requires both block and per-group ETL fields", () => {

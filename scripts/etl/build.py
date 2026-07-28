@@ -149,6 +149,7 @@ class PlutoBlock:
     latitude_sum: float = 0
     longitude_sum: float = 0
     coordinate_lots: int = 0
+    lot_built_sqft: Dict[int, float] = field(default_factory=dict)
     lot_capacity: Dict[int, float] = field(default_factory=dict)
 
     @property
@@ -400,6 +401,10 @@ def scan_pluto(paths: Sequence[Path]) -> PlutoScanResult:
                 )
                 block.land_area += lot_area
                 block.built_sqft += built_sqft
+                lot = int(lot_number)
+                block.lot_built_sqft[lot] = (
+                    block.lot_built_sqft.get(lot, 0) + built_sqft
+                )
 
                 latitude = _pluto_number(
                     row["latitude"], "latitude", path, line_number
@@ -437,7 +442,6 @@ def scan_pluto(paths: Sequence[Path]) -> PlutoScanResult:
                 )
                 capacity = max(0.0, max_far - built_far) * lot_area
                 block.capacity_sqft += capacity
-                lot = int(lot_number)
                 block.lot_capacity[lot] = (
                     block.lot_capacity.get(lot, 0) + capacity
                 )
@@ -675,6 +679,31 @@ def make_quip(character: str, groups: Sequence[Group], displayed_groups: int) ->
     raise BuildError(f"unknown block character: {character}")
 
 
+def _allocate_group_area(
+    lot_area: Dict[int, float],
+    lot_to_group: Dict[str, int],
+    group_count: int,
+) -> List[int]:
+    group_area = [0.0 for _ in range(group_count)]
+    for lot, area in lot_area.items():
+        group_index = lot_to_group.get(str(lot))
+        if group_index is not None:
+            group_area[group_index] += area
+
+    rounded = [math.floor(area) for area in group_area]
+    remainder = round(sum(group_area)) - sum(rounded)
+    fractional_order = sorted(
+        range(group_count),
+        key=lambda index: (
+            -(group_area[index] - rounded[index]),
+            index,
+        ),
+    )
+    for index in fractional_order[:remainder]:
+        rounded[index] += 1
+    return rounded
+
+
 def build_block_payload(
     rows: Sequence[RawRow],
     *,
@@ -756,6 +785,7 @@ def build_block_payload(
             "r": index // side,
             "v": round(group.mv / 1_000_000, 3),
             "nLots": group.n,
+            "builtSqft": None,
             "ghost": None,
         }
         owner, owner_raw = _group_owner(group)
@@ -862,23 +892,22 @@ def build_block_payload(
                 ),
             }
         )
-        group_capacity = [0.0 for _ in lots_out]
-        for lot, capacity in pluto_block.lot_capacity.items():
-            group_index = lot_to_group.get(str(lot))
-            if group_index is not None:
-                group_capacity[group_index] += capacity
-        rounded_capacity = [math.floor(capacity) for capacity in group_capacity]
-        remainder = round(sum(group_capacity)) - sum(rounded_capacity)
-        fractional_order = sorted(
-            range(len(group_capacity)),
-            key=lambda index: (
-                -(group_capacity[index] - rounded_capacity[index]),
-                index,
-            ),
+        rounded_built = _allocate_group_area(
+            pluto_block.lot_built_sqft,
+            lot_to_group,
+            len(lots_out),
         )
-        for index in fractional_order[:remainder]:
-            rounded_capacity[index] += 1
-        for entry, capacity in zip(lots_out, rounded_capacity):
+        rounded_capacity = _allocate_group_area(
+            pluto_block.lot_capacity,
+            lot_to_group,
+            len(lots_out),
+        )
+        for entry, built, capacity in zip(
+            lots_out,
+            rounded_built,
+            rounded_capacity,
+        ):
+            entry["builtSqft"] = built
             entry["ghost"] = capacity
 
     owner_hint, _ = _group_owner(largest_group)
@@ -980,7 +1009,16 @@ def validate_payload(payload: dict) -> None:
     if payload["nGroups"] != len(payload["lots"]):
         raise BuildError("nGroups does not match lots length")
 
-    lot_required = {"bbl", "lot", "c", "r", "v", "nLots", "ghost"}
+    lot_required = {
+        "bbl",
+        "lot",
+        "c",
+        "r",
+        "v",
+        "nLots",
+        "builtSqft",
+        "ghost",
+    }
     lot_optional = {"owner", "ownerRaw", "club", "zero"}
     for entry in payload["lots"]:
         if not isinstance(entry, dict):
@@ -998,6 +1036,12 @@ def validate_payload(payload: dict) -> None:
             not _is_int(entry["ghost"]) or entry["ghost"] < 0
         ):
             raise BuildError("lot.ghost must be a nonnegative integer or null")
+        if entry["builtSqft"] is not None and (
+            not _is_int(entry["builtSqft"]) or entry["builtSqft"] < 0
+        ):
+            raise BuildError(
+                "lot.builtSqft must be a nonnegative integer or null"
+            )
         for key in ("bbl", "owner", "ownerRaw"):
             if key in entry and not isinstance(entry[key], str):
                 raise BuildError(f"lot.{key} must be a string")
