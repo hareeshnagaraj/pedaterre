@@ -30,3 +30,4 @@ design/.vercel/
 *.bak
 *~
 data/raw/
+.gstack/
