@@ -18,6 +18,7 @@ const cityStatsSchema = z.object({
   clubLots: z.number().int().nonnegative(),
   clubShareOfMv: z.number().min(0).max(1),
   nBlocks: z.number().int().positive(),
+  nLocatedBlocks: z.number().int().positive(),
   nLots: z.number().int().positive(),
   boroughTotals: z.record(z.number().nonnegative()),
   top25Taxable: z.array(blockPickSchema).min(2),

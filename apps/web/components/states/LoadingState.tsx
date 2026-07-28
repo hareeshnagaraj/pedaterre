@@ -34,7 +34,6 @@ export function LoadingState({
   return (
     <StateFrame
       focusRef={focusTargetRef}
-      eyebrow="ASSESSMENT REQUEST"
       title="PULLING THE ROLL…"
       busy
     >
@@ -44,11 +43,6 @@ export function LoadingState({
           {submittedAddress}
         </p>
       </header>
-      <div className={styles.silhouette} aria-hidden="true">
-        {Array.from({ length: 6 }, (_, index) => (
-          <span className={styles.tower} key={index} />
-        ))}
-      </div>
       {slow ? (
         <>
           <p className={styles.body}>

@@ -148,7 +148,6 @@ function GameLoadingState() {
   return (
     <StateFrame
       busy
-      eyebrow="ASSESSMENT EXERCISE"
       focusRef={focusRef}
       title="DEALING THE ROLL…"
     >
@@ -158,11 +157,6 @@ function GameLoadingState() {
           TWO ELIGIBLE BLOCKS
         </p>
       </header>
-      <div className={stateStyles.silhouette} aria-hidden="true">
-        {Array.from({ length: 6 }, (_, index) => (
-          <span className={stateStyles.tower} key={index} />
-        ))}
-      </div>
       <div className={stateStyles.actions}>
         <button className={stateStyles.button} type="button" disabled>
           PAIR PENDING
@@ -424,7 +418,7 @@ export function AssessorsGame({
   if (phase === "loading" || !pair) return <GameLoadingState />;
 
   return (
-    <section className={styles.game} aria-labelledby="game-pair-title">
+    <section className={styles.game} aria-label="Assessment pair">
       <div className={styles.registerLine}>
         <div>
           <span>CURRENT STREAK</span>
@@ -434,11 +428,6 @@ export function AssessorsGame({
           RUN SEED <strong>{seed}</strong>
         </p>
       </div>
-
-      <p className={styles.instruction} id="game-pair-title">
-        Which block does the roll value higher? Select one filing. Values
-        remain withheld until submission.
-      </p>
 
       <div className={styles.pair}>
         {(["left", "right"] as const).map((side) => {
@@ -517,12 +506,11 @@ export function AssessorsGame({
           <div className={styles.runReceipt}>
             <p className={styles.runWordmark}>THE ASSESSOR&apos;S GAME</p>
             <p>STREAK ON FILE</p>
-            <strong id="run-end-title">{streak}</strong>
+            <strong>{streak}</strong>
             <span>{gameStamp(seed)}</span>
           </div>
           <div className={styles.runActions}>
-            <p className="eyebrow">RUN CLOSED</p>
-            <h2>THE ROLL HAS BEEN ENTERED.</h2>
+            <h2 id="run-end-title">RUN CLOSED AT {streak}.</h2>
             <button
               disabled={shareWorking}
               onClick={() => void exportRunCard()}

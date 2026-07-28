@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   bucketUrl,
   loadBlockForOg,
+  loadRollYearForOg,
   pickBlockFromBucket,
   silhouetteBars,
   topGroupValues,
@@ -15,6 +16,7 @@ const payload = {
   block: 1398,
   totalMv: 593_156_996,
   character: "spread" as const,
+  rollYear: "TEST ROLL",
   lots: Array.from({ length: 14 }, (_, index) => ({
     lot: index + 1,
     v: index,
@@ -81,6 +83,25 @@ test("converts fetch and not-found failures into the generic-card path", async (
   assert.equal(failed, null);
 });
 
+test("loads the filed roll year for a missing-record notice", async () => {
+  let requested = "";
+  const rollYear = await loadRollYearForOg(
+    "https://pedaterre.example/some/path",
+    async (input) => {
+      requested = String(input);
+      return new Response(JSON.stringify({ rollYear: "TEST ROLL" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+  );
+  assert.equal(
+    requested,
+    "https://pedaterre.example/data/city-stats.json",
+  );
+  assert.equal(rollYear, "TEST ROLL");
+});
+
 test("the route declares its edge image response and immutable cache contract", async () => {
   const routePath = fileURLToPath(
     new URL("../[boro]/[block]/route.tsx", import.meta.url),
@@ -92,4 +113,5 @@ test("the route declares its edge image response and immutable cache contract", 
   assert.match(source, /new ImageResponse/);
   assert.match(source, /status: payload \? 200 : 404/);
   assert.match(source, /loadBlockForOg\(new URL\(request\.url\)\.origin/);
+  assert.doesNotMatch(source, /\[9, 5, 14, 7, 20, 11, 4, 8\]/);
 });

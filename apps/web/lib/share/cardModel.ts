@@ -35,7 +35,7 @@ export interface ShareCardPayload {
   nLots?: number;
   nGroups?: number;
   character: BlockCharacter;
-  rollYear?: string;
+  rollYear: string;
   address?: string;
   addressHint?: string;
   quip?: string;
@@ -79,14 +79,23 @@ export function boroughIdentity(value: string): { code: string; name: string } {
 }
 
 export function stampFor(
-  payload: Pick<ShareCardPayload, "borough" | "block">,
+  payload: Pick<ShareCardPayload, "borough" | "block" | "rollYear">,
 ): string {
-  return `PD-${boroughIdentity(payload.borough).code}-${Math.trunc(payload.block)}-FY27`;
+  return `PD-${boroughIdentity(payload.borough).code}-${Math.trunc(payload.block)}-${compactRollYear(payload.rollYear)}`;
+}
+
+export function compactRollYear(rollYear: string): string {
+  const normalized = rollYear.trim().toUpperCase();
+  const calendarYear = normalized.match(/(\d{2})$/)?.[1];
+  return calendarYear ? `FY${calendarYear}` : normalized;
 }
 
 export function formatAssessedValue(value: number): string {
   const safe = Number.isFinite(value) ? Math.max(0, value) : 0;
   if (safe === 0) return "$0";
+  if (safe >= 1_000_000_000_000) {
+    return `$${(safe / 1_000_000_000_000).toFixed(2)}T`;
+  }
   if (safe >= 1_000_000_000) {
     const billions = safe / 1_000_000_000;
     return `$${billions >= 100 ? billions.toFixed(0) : billions.toFixed(1)}B`;
@@ -168,14 +177,14 @@ function generatedQuip(payload: ShareCardPayload): string {
   switch (payload.character) {
     case "whale":
       return share >= 0.45
-        ? `One building is ${sharePercent}% of the block's assessed value. Everyone else is a row house in its shadow.`
+        ? `One building is ${sharePercent}% of the block's assessed value.`
         : `The largest holding here carries ${sharePercent}% of the block.`;
     case "spread":
       return clubCount
         ? `${clubCount} of ${groups} property groups on this block clear $50M.`
         : `${groups} property groups. The top one is ${multiple}× the median holding here.`;
     case "flat":
-      return `No towers here — ${groups} holdings within ${spread}× of each other. The roll calls that balance.`;
+      return `${groups} holdings, all within ${spread}× of each other. No single filing dominates.`;
     case "single":
       return "One lot. The whole block. One line in the roll.";
     case "empty":
@@ -194,7 +203,7 @@ function rankLine(payload: ShareCardPayload): string {
   if (Number.isFinite(payload.rank) && (payload.rank ?? 0) > 0) {
     return `City rank #${Math.trunc(payload.rank ?? 0).toLocaleString("en-US")}`;
   }
-  return "NYC assessment roll · FY27";
+  return `NYC assessment roll · ${payload.rollYear}`;
 }
 
 export function buildShareCardModel(payload: ShareCardPayload): ShareCardModel {

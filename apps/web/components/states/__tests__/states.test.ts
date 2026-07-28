@@ -41,7 +41,7 @@ test("contains the binding municipal copy", async () => {
     "PULLING THE ROLL…",
     "NO NYC ADDRESS MATCH",
     "SEARCH UNAVAILABLE",
-    "NO PARCEL ON FILE — this block is not in the FY2027 roll",
+    "NO PARCEL ON FILE — this block is not in the ",
     "RETRY",
     "THE REQUESTED LOT IS NOT ON THIS ROLL — showing the full block",
     "CANVAS UNAVAILABLE",
@@ -50,11 +50,11 @@ test("contains the binding municipal copy", async () => {
   }
 });
 
-test("loading keeps the submitted address, a silhouette, aria-busy, and a disabled resubmit", async () => {
+test("loading keeps the submitted address, aria-busy, and a disabled resubmit", async () => {
   const text = await source("LoadingState.tsx");
   assert.match(text, /submittedAddress/);
   assert.match(text, /<header/);
-  assert.match(text, /styles\.silhouette/);
+  assert.doesNotMatch(text, /styles\.(?:silhouette|tower)/);
   assert.match(text, /busy/);
   assert.match(text, /disabled/);
   assert.match(text, /slowAfterMs = 4_000/);

@@ -716,7 +716,6 @@ export function CityMap({ registerCount }: CityMapProps) {
 
       <section className="map-access-list" aria-labelledby="map-list-title">
         <div>
-          <p className="eyebrow">KEYBOARD REGISTER</p>
           <h2 id="map-list-title">
             TOP 50 ·{" "}
             {metric === "total" ? "TOTAL VALUE" : "PER SQUARE FOOT"}

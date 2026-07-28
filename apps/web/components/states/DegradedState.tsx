@@ -39,7 +39,6 @@ export function DegradedState({
   return (
     <StateFrame
       focusRef={focusTargetRef}
-      eyebrow="DISPLAY NOTICE"
       title="CANVAS UNAVAILABLE — numeric roll shown"
     >
       <p className={styles.body}>

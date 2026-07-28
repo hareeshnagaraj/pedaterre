@@ -379,8 +379,7 @@ class RuleTests(unittest.TestCase):
         ]
         self.assertEqual(
             build.make_quip("whale", large_whale, 2),
-            "One building is 50% of the block's assessed value. "
-            "Everyone else is a row house in its shadow.",
+            "One building is 50% of the block's assessed value.",
         )
         small_whale = [
             build.Group(mv=40, n=1),
@@ -414,8 +413,8 @@ class RuleTests(unittest.TestCase):
         flat = [build.Group(mv=20, n=1), build.Group(mv=10, n=1)]
         self.assertEqual(
             build.make_quip("flat", flat, 2),
-            "No towers here — 2 holdings within 2× of each other. "
-            "The roll calls that balance.",
+            "2 holdings, all within 2× of each other. "
+            "No single filing dominates.",
         )
         self.assertEqual(
             build.make_quip("single", [build.Group(mv=1, n=1)], 1),
@@ -517,6 +516,9 @@ class ProductionTreeTests(unittest.TestCase):
         self.assertEqual(meta["row_count"], build.EXPECTED_ROWS)
         self.assertEqual(meta["block_count"], build.EXPECTED_BLOCKS)
         self.assertEqual(meta["group_count"], self.result.group_count)
+        self.assertEqual(
+            city["nLocatedBlocks"], self.result.blocks_with_coordinates
+        )
         self.assertEqual(
             sum(city["boroughTotals"].values()), build.EXPECTED_TOTAL_MV
         )

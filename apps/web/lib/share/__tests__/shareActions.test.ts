@@ -20,7 +20,7 @@ test("uses file sharing before the clipboard", async () => {
   const restoreNavigator = setGlobal("navigator", {
     canShare: () => true,
     share: async (data: ShareData) => {
-      assert.equal(data.files?.[0]?.name, "pedaterre-PD-MN-1398-FY27.png");
+      assert.equal(data.files?.[0]?.name, "pedaterre-PD-MN-1398-TEST.png");
       calls.push("share");
     },
     clipboard: {
@@ -31,7 +31,7 @@ test("uses file sharing before the clipboard", async () => {
   try {
     const result = await shareCard({
       png: new Blob(["png"], { type: "image/png" }),
-      stamp: "PD-MN-1398-FY27",
+      stamp: "PD-MN-1398-TEST",
     });
     assert.deepEqual(calls, ["share"]);
     assert.equal(result.method, "share");
@@ -59,7 +59,7 @@ test("uses ClipboardItem when file sharing is unavailable", async () => {
   try {
     const result = await shareCard({
       png: new Blob(["png"], { type: "image/png" }),
-      stamp: "PD-SI-245-FY27",
+      stamp: "PD-SI-245-TEST",
     });
     assert.equal(written.length, 1);
     assert.equal(result.method, "clipboard");
@@ -93,10 +93,10 @@ test("downloads with the stamped filename as the final fallback", async () => {
   try {
     const result = await shareCard({
       png: new Blob(["png"], { type: "image/png" }),
-      stamp: "PD-BK-3184-FY27",
+      stamp: "PD-BK-3184-TEST",
     });
     assert.equal(result.method, "download");
-    assert.equal(downloaded, "pedaterre-PD-BK-3184-FY27.png");
+    assert.equal(downloaded, "pedaterre-PD-BK-3184-TEST.png");
   } finally {
     restoreDocument();
     restoreNavigator();
