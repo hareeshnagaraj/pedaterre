@@ -80,7 +80,7 @@ test("controls meet the 44px target and CSS colors are token-bound", async () =>
   assert.match(css, /min-height: 44px/);
   assert.doesNotMatch(css, /#[0-9a-f]{3,8}/i);
   assert.match(css, /var\(--stamp\)/);
-  assert.match(css, /var\(--you\)/);
+  assert.match(css, /var\(--focus\)/);
 });
 
 test("the dev page renders all seven state components", async () => {

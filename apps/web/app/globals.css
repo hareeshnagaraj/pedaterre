@@ -7,6 +7,7 @@
   --stamp: #e23d2d;
   --gold: #e0b04a;
   --you: #6ed4ff;
+  --focus: oklch(1 0 0 / 0.5);
   --font: "Libre Franklin", system-ui, sans-serif;
   --num: "Barlow Condensed", "Arial Narrow", sans-serif;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -1336,7 +1337,7 @@ a { color: inherit; }
 .share-actions button:focus-visible,
 .result-footer a:focus-visible,
 .not-found a:focus-visible {
-  outline: 2px solid oklch(1 0 0 / 0.5);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -2141,7 +2142,7 @@ a { color: inherit; }
 .map-reset:focus-visible,
 .map-access-list a:focus-visible,
 .block-locator a:focus-visible {
-  outline: 2px solid oklch(1 0 0 / 0.5);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
