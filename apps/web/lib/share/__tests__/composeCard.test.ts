@@ -62,7 +62,9 @@ test("uses the required zero-value copy", async () => {
     nGroups: 1,
     lots: [{ lot: 1, v: 0 }],
   };
-  assert.equal(buildShareCardModel(payload).dollars, "assessed at $0");
+  const model = buildShareCardModel(payload);
+  assert.equal(model.dollars, "assessed at $0");
+  assert.equal(model.quip, "No assessed market value on this roll.");
 });
 
 test("formats assessed values at the trillion boundary", () => {
