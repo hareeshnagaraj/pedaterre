@@ -371,6 +371,30 @@ function CanvasBlockViz({
 
     function drawBuilding(c: number, r: number, v: number, flags: Lot, maxV: number, bloomPass: boolean) {
       const base = 0.62;
+      if (v <= 0) {
+        if (bloomPass) return;
+        const footprint = [
+          project(c, r, 0),
+          project(c + base, r, 0),
+          project(c + base, r + base, 0),
+          project(c, r + base, 0),
+        ];
+        ctx.save();
+        ctx.beginPath();
+        footprint.forEach((point, index) => {
+          if (index === 0) ctx.moveTo(point.x, point.y);
+          else ctx.lineTo(point.x, point.y);
+        });
+        ctx.closePath();
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = flags.you
+          ? "rgba(160,220,240,0.56)"
+          : "rgba(255,255,255,0.26)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
       const localRise = lotRise(v, flags, maxV);
       if (localRise < 0.02 && !bloomPass) return;
       const H = hScale(v) * localRise;
@@ -1036,9 +1060,7 @@ function CanvasBlockViz({
           blind && (l.you || l.club)
             ? { ...l, you: undefined, club: undefined }
             : l;
-        if (payload.totalMv > 0) {
-          drawBuilding(l.c, l.r, l.v, renderLot, maxV, false);
-        }
+        drawBuilding(l.c, l.r, l.v, renderLot, maxV, false);
         drawGhost(renderLot, maxV);
         ctx.globalAlpha = 1;
       });

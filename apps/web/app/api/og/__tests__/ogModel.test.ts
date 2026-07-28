@@ -45,6 +45,19 @@ test("derives a bounded top-12 silhouette from group values", () => {
   assert.ok(bars[0].height > bars.at(-1)!.height);
 });
 
+test("omits zero-valued groups instead of giving them bar height", () => {
+  const values = topGroupValues({
+    lots: [
+      { lot: 1, v: 4 },
+      { lot: 2, v: 0 },
+      { lot: 3, v: -1 },
+    ],
+  });
+  assert.deepEqual(values, [4]);
+  assert.deepEqual(topGroupValues({ lots: [{ lot: 1, v: 0 }] }), []);
+  assert.deepEqual(silhouetteBars([0, -1, Number.NaN]), []);
+});
+
 test("self-fetches the bucket and returns its matching block", async () => {
   let requested = "";
   const fetcher = async (input: string | URL | Request) => {
@@ -113,5 +126,7 @@ test("the route declares its edge image response and immutable cache contract", 
   assert.match(source, /new ImageResponse/);
   assert.match(source, /status: payload \? 200 : 404/);
   assert.match(source, /loadBlockForOg\(new URL\(request\.url\)\.origin/);
+  assert.match(source, /\$0 · no value geometry/);
+  assert.match(source, /bars\.length > 0/);
   assert.doesNotMatch(source, /\[9, 5, 14, 7, 20, 11, 4, 8\]/);
 });

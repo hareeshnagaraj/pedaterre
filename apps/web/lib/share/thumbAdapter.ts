@@ -42,6 +42,22 @@ function polygon(
   ctx.stroke();
 }
 
+function outline(
+  ctx: CanvasRenderingContext2D,
+  points: Array<{ x: number; y: number }>,
+  stroke: string,
+) {
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    if (index === 0) ctx.moveTo(point.x, point.y);
+    else ctx.lineTo(point.x, point.y);
+  });
+  ctx.closePath();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+}
+
 export const drawSkylineThumb: DrawSkylineThumb = (
   ctx,
   payload,
@@ -86,7 +102,7 @@ export const drawSkylineThumb: DrawSkylineThumb = (
   );
   for (const lot of sorted) {
     const base = 0.62;
-    const heightPx = hScale(lot.v);
+    const heightPx = lot.v <= 0 ? 0 : hScale(lot.v);
     const corners = [
       point(lot.c, lot.r, 0),
       point(lot.c + base, lot.r, 0),
@@ -97,6 +113,14 @@ export const drawSkylineThumb: DrawSkylineThumb = (
       point(lot.c + base, lot.r + base, heightPx),
       point(lot.c, lot.r + base, heightPx),
     ];
+    if (heightPx === 0) {
+      outline(
+        ctx,
+        [corners[0], corners[1], corners[2], corners[3]],
+        lot.you ? CARD_TOKENS.you : "#777066",
+      );
+      continue;
+    }
     const top = lot.you
       ? CARD_TOKENS.you
       : lot.club

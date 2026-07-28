@@ -10,24 +10,20 @@ const blockRankRowSchema = z
     t: z.boolean(),
     a: z.string().max(28).optional(),
     c: z.enum(["whale", "spread", "flat", "single", "empty"]),
+    rank: z.number().int().positive(),
   })
   .strict();
 
 export const blockRankRowsSchema = z.array(blockRankRowSchema);
 
 export type BlockRankRow = z.infer<typeof blockRankRowSchema>;
-export type RankedBlockRow = BlockRankRow & { rank: number };
 export type BoroughRankFilter = "ALL" | 1 | 2 | 3 | 4 | 5;
 
-export function rankBlockRows(rows: BlockRankRow[]): RankedBlockRow[] {
-  return rows.map((row, index) => ({ ...row, rank: index + 1 }));
-}
-
 export function filterBlockRanks(
-  rows: RankedBlockRow[],
+  rows: BlockRankRow[],
   borough: BoroughRankFilter,
   query: string,
-): RankedBlockRow[] {
+): BlockRankRow[] {
   const needle = query.trim().toLocaleLowerCase("en-US");
   return rows.filter(
     (row) =>
@@ -39,8 +35,8 @@ export function filterBlockRanks(
 }
 
 export function chunkBlockRanks(
-  rows: RankedBlockRow[],
+  rows: BlockRankRow[],
   count: number,
-): RankedBlockRow[] {
+): BlockRankRow[] {
   return rows.slice(0, Math.max(0, count));
 }

@@ -2,7 +2,8 @@ import type { BlockPayload, Lot } from "../schema.ts";
 import { hScale } from "./projection.ts";
 
 const SQFT_PER_MILLION = 1_000_000;
-const HEIGHT_FLOOR = hScale(0);
+// Capacity adds height above the skyline's positive-value floor.
+const HEIGHT_FLOOR = hScale(Number.MIN_VALUE);
 
 export function ghostHeight(capacitySqft: number | null | undefined): number {
   if (capacitySqft == null || capacitySqft <= 0) return 0;

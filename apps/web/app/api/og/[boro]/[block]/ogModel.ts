@@ -114,7 +114,7 @@ export function topGroupValues(
 ): number[] {
   return payload.lots
     .map((lot) => Number(lot.v))
-    .filter((value) => Number.isFinite(value) && value >= 0)
+    .filter((value) => Number.isFinite(value) && value > 0)
     .sort((a, b) => b - a)
     .slice(0, Math.max(0, limit));
 }
@@ -126,7 +126,7 @@ export function silhouetteBars(
 ): SilhouetteBar[] {
   const clean = values
     .slice(0, 12)
-    .map((value) => (Number.isFinite(value) ? Math.max(0, value) : 0));
+    .filter((value) => Number.isFinite(value) && value > 0);
   if (!clean.length) return [];
 
   const gap = 9;
@@ -134,7 +134,7 @@ export function silhouetteBars(
     6,
     (width - gap * (clean.length - 1)) / clean.length,
   );
-  const maximum = Math.max(...clean, 1);
+  const maximum = Math.max(...clean);
   const minimumHeight = Math.min(24, height * 0.08);
 
   return clean.map((value, index) => {

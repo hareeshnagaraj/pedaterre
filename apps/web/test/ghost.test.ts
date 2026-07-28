@@ -24,7 +24,10 @@ const lot: Lot = {
 test("ghost height uses the skyline scale without inheriting its minimum", () => {
   assert.equal(ghostHeight(0), 0);
   assert.equal(ghostHeight(null), 0);
-  assert.equal(ghostHeight(1_000_000), hScale(1) - hScale(0));
+  assert.equal(
+    ghostHeight(1_000_000),
+    hScale(1) - hScale(Number.MIN_VALUE),
+  );
   assert.equal(permittedHeight(lot), builtHeight(lot) + ghostHeight(lot.ghost));
   assert.ok(permittedHeight(lot) > builtHeight(lot));
 });

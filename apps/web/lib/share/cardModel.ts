@@ -196,7 +196,14 @@ function rankLine(payload: ShareCardPayload): string {
   if (payload.rankLabel?.trim()) {
     return truncateText(payload.rankLabel, CARD_TEXT_LIMITS.rank);
   }
-  if (Number.isFinite(payload.percentile) && (payload.percentile ?? 0) > 0) {
+  // "Top X%" only reads as a fact in the head of the distribution. Past the
+  // median it is technically true and absurd — a block ranked 25,919th is
+  // not "top 90%". Below that, state the rank the block page already shows.
+  if (
+    Number.isFinite(payload.percentile) &&
+    (payload.percentile ?? 0) > 0 &&
+    (payload.percentile ?? 0) <= 50
+  ) {
     const percentile = Math.max(0.1, payload.percentile ?? 0);
     return `Top ${percentile.toFixed(percentile < 1 ? 1 : 0)}% of NYC blocks`;
   }
