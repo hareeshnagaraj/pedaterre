@@ -60,11 +60,11 @@ meta.json only).
     sum(curactextot)/sum(curacttot) < 0.5 (guard div0 → treat as exempt).
 11. **Quips**: deterministic templates by character (fill computed values,
     round percents to whole numbers; dry municipal register, no emoji):
-    - whale, share>=45%: `One building is {p}% of the block's assessed value. Everyone else is a row house in its shadow.`
+    - whale, share>=45%: `One building is {p}% of the block's assessed value.`
     - whale, share<45%: `The largest holding here carries {p}% of the block.`
     - spread with club: `{n} of {g} property groups on this block clear $50M.`
     - spread, no club: `{g} property groups. The top one is {m}× the median holding here.`
-    - flat: `No towers here — {g} holdings within {x}× of each other. The roll calls that balance.`
+    - flat: `{g} holdings, all within {x}× of each other. No single filing dominates.`
     - single: `One lot. The whole block. One line in the roll.`
     - empty: `No assessed market value on this roll.`
 
