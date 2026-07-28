@@ -24,7 +24,8 @@ export default async function GamePage() {
         <h1 id="game-title">THE ASSESSOR&apos;S GAME</h1>
         <p>
           Two blocks are entered without figures. Select the block carrying
-          the higher assessed market value.
+          the higher assessed market value. Building form is illustrative;
+          only height and area carry a filed figure.
         </p>
       </section>
 

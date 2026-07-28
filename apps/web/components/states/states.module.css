@@ -113,7 +113,7 @@
 .button:focus-visible,
 .link:focus-visible,
 .searchInput:focus-visible {
-  outline: 3px solid var(--you);
+  outline: 2px solid oklch(1 0 0 / 0.5);
   outline-offset: 3px;
 }
 
