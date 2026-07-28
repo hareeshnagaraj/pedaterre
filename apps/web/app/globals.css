@@ -164,8 +164,7 @@ a { color: inherit; }
 .combobox-wrap input::placeholder { color: oklch(1 0 0 / 0.3); }
 
 .combobox-wrap input:focus {
-  border-color: var(--you);
-  box-shadow: 0 0 0 1px var(--you);
+  border-color: oklch(1 0 0 / 0.55);
 }
 
 .combobox-wrap ul {
@@ -197,8 +196,9 @@ a { color: inherit; }
 }
 
 .combobox-wrap li[aria-selected="true"] {
-  background: var(--stamp);
-  color: #fff;
+  background: oklch(1 0 0 / 0.06);
+  box-shadow: inset 2px 0 0 var(--stamp);
+  color: var(--ink);
 }
 
 .combobox-wrap .combobox-notice {
@@ -713,8 +713,7 @@ a { color: inherit; }
 .rank-search input::placeholder { color: oklch(1 0 0 / 0.3); }
 
 .rank-search input:focus {
-  border-color: var(--you);
-  box-shadow: 0 0 0 1px var(--you);
+  border-color: oklch(1 0 0 / 0.55);
 }
 
 .rank-count {
@@ -1337,8 +1336,16 @@ a { color: inherit; }
 .share-actions button:focus-visible,
 .result-footer a:focus-visible,
 .not-found a:focus-visible {
-  outline: 2px solid var(--you);
-  outline-offset: 3px;
+  outline: 2px solid oklch(1 0 0 / 0.5);
+  outline-offset: 2px;
+}
+
+/* A heading focused programmatically after a search is a screen-reader
+   cue, not a keyboard destination. Announce it without boxing the
+   headline for sighted users. */
+[tabindex="-1"]:focus,
+[tabindex="-1"]:focus-visible {
+  outline: none;
 }
 
 .iso-panel {
@@ -2134,8 +2141,8 @@ a { color: inherit; }
 .map-reset:focus-visible,
 .map-access-list a:focus-visible,
 .block-locator a:focus-visible {
-  outline: 2px solid var(--you);
-  outline-offset: 3px;
+  outline: 2px solid oklch(1 0 0 / 0.5);
+  outline-offset: 2px;
 }
 
 @media (max-width: 860px) {
