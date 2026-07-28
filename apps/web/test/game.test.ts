@@ -17,7 +17,7 @@ function block(
   t = true,
   c: BlockRankRow["c"] = "spread",
 ): BlockRankRow {
-  return { b, k, m, t, c };
+  return { b, k, m, t, c, rank: 1 };
 }
 
 test("the seeded xorshift produces the same run for the same seed", () => {

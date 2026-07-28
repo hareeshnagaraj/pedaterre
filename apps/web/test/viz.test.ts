@@ -16,6 +16,12 @@ function lot(lotNumber: number, value: number): Lot {
   };
 }
 
+test("zero and negative values have no building height", () => {
+  assert.equal(hScale(0), 0);
+  assert.equal(hScale(-1), 0);
+  assert.ok(hScale(0.001) > 0);
+});
+
 test("the 32% carve returns two districts without cloning lots", () => {
   const lots = [lot(1, 40), lot(2, 24), lot(3, 20), lot(4, 16)];
   const layout = layoutTreemap(lots, 16, 16, 900, 408);

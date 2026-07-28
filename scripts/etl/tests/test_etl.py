@@ -316,6 +316,18 @@ class RuleTests(unittest.TestCase):
         rank_all, rank_taxable = build.compute_ranks(blocks)
         self.assertEqual(rank_all, {(1, 1): 1, (1, 2): 1, (1, 3): 2, (1, 4): 3})
         self.assertEqual(rank_taxable, {(1, 1): 1, (1, 3): 2})
+        self.assertEqual(
+            build.rank_records(
+                [{"mv": 100}, {"mv": 100}, {"mv": 50}, {"mv": 25}],
+                "mv",
+            ),
+            [
+                {"mv": 100, "rank": 1},
+                {"mv": 100, "rank": 1},
+                {"mv": 50, "rank": 2},
+                {"mv": 25, "rank": 3},
+            ],
+        )
 
     def test_pluto_geometry_capacity_and_unknown_far_rules(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -630,24 +642,35 @@ class ProductionTreeTests(unittest.TestCase):
             all(left["m"] >= right["m"] for left, right in zip(rows, rows[1:]))
         )
 
-        bucket_keys = set()
+        bucket_ranks = {}
         for bucket_path in (
             build.DEFAULT_OUTPUT_DIR / "buckets"
         ).glob("*/*.json"):
             boro = int(bucket_path.parent.name)
             with bucket_path.open(encoding="utf-8") as handle:
-                bucket_keys.update(
-                    (boro, int(block)) for block in json.load(handle)
+                bucket_ranks.update(
+                    {
+                        (boro, int(block)): payload["rank"]
+                        for block, payload in json.load(handle).items()
+                    }
                 )
 
         self.assertEqual(
             {(row["b"], row["k"]) for row in rows},
-            bucket_keys,
+            set(bucket_ranks),
         )
         self.assertTrue(
             all(
-                {"b", "k", "m", "t", "c"}.issubset(row)
-                and set(row).issubset({"b", "k", "m", "t", "a", "c"})
+                row["rank"] == bucket_ranks[(row["b"], row["k"])]
+                for row in rows
+            )
+        )
+        self.assertTrue(
+            all(
+                {"b", "k", "m", "t", "c", "rank"}.issubset(row)
+                and set(row).issubset(
+                    {"b", "k", "m", "t", "a", "c", "rank"}
+                )
                 for row in rows
             )
         )
@@ -675,6 +698,13 @@ class ProductionTreeTests(unittest.TestCase):
                 for left, right in zip(rows, rows[1:])
             )
         )
+        dense_rank = 0
+        previous_value = None
+        for row in rows:
+            if previous_value is None or row["mv"] != previous_value:
+                dense_rank += 1
+                previous_value = row["mv"]
+            self.assertEqual(row["rank"], dense_rank)
         self.assertEqual(
             round(sum(row["mv"] for row in rows) / city["totalMv"], 4),
             city["clubShareOfMv"],

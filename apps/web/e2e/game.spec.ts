@@ -15,10 +15,10 @@ const fixture = JSON.parse(
 );
 
 const rows: BlockRankRow[] = [
-  { b: 1, k: 101, m: 300_000_000, t: true, c: "whale" },
-  { b: 2, k: 202, m: 200_000_000, t: true, c: "flat" },
-  { b: 3, k: 303, m: 150_000_000, t: true, c: "spread" },
-  { b: 4, k: 404, m: 100_000_000, t: true, c: "whale" },
+  { b: 1, k: 101, m: 300_000_000, t: true, c: "whale", rank: 1 },
+  { b: 2, k: 202, m: 200_000_000, t: true, c: "flat", rank: 2 },
+  { b: 3, k: 303, m: 150_000_000, t: true, c: "spread", rank: 3 },
+  { b: 4, k: 404, m: 100_000_000, t: true, c: "whale", rank: 4 },
 ];
 
 const borough = {

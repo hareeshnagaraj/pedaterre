@@ -7,6 +7,7 @@ import type {
 } from "./types";
 
 export function hScale(v: number) {
+  if (v <= 0) return 0;
   // Soft-cap whales; lift mid street so silhouette reads as a city, not one spike
   // Extra mid-band lift ($4–35M) so the skyline isn't flat-then-spike
   const capped = Math.min(v, 220) + Math.log10(v + 1) * 44;

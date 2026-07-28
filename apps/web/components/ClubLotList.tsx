@@ -8,9 +8,8 @@ import {
   chunkClubLots,
   clubLotRowsSchema,
   filterClubLots,
-  rankClubLots,
   type ClubBlockScope,
-  type RankedClubLotRow,
+  type ClubLotRow,
 } from "@/lib/clubLots";
 import { formatAssessedValue } from "@/lib/share/cardModel";
 
@@ -33,7 +32,7 @@ interface ClubLotListProps {
 type LoadState =
   | { state: "loading" }
   | { state: "error" }
-  | { state: "ready"; rows: RankedClubLotRow[] };
+  | { state: "ready"; rows: ClubLotRow[] };
 
 export function ClubLotList({ expectedCount }: ClubLotListProps) {
   const [load, setLoad] = useState<LoadState>({ state: "loading" });
@@ -78,7 +77,7 @@ export function ClubLotList({ expectedCount }: ClubLotListProps) {
             `Club lots has ${rows.length} rows; expected ${expectedCount}.`,
           );
         }
-        setLoad({ state: "ready", rows: rankClubLots(rows) });
+        setLoad({ state: "ready", rows });
       })
       .catch(() => {
         if (!controller.signal.aborted) setLoad({ state: "error" });

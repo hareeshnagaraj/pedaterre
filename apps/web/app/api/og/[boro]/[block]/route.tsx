@@ -86,7 +86,7 @@ function OgCard({
           overflow: "hidden",
         }}
       >
-        {payload ? (
+        {payload && bars.length > 0 ? (
           <>
             <svg
               width="560"
@@ -136,6 +136,44 @@ function OgCard({
               VALUE SKYLINE · TOP 12 GROUPS
             </div>
           </>
+        ) : payload ? (
+          <div
+            style={{
+              display: "flex",
+              width: "560px",
+              height: "180px",
+              flexDirection: "column",
+              justifyContent: "center",
+              padding: "28px 32px",
+              border: `2px solid ${CARD_TOKENS.inkDim}`,
+              color: CARD_TOKENS.inkDim,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                fontFamily: CARD_TOKENS.num,
+                fontSize: "25px",
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+              }}
+            >
+              {normalizedBorough(payload.borough) ?? payload.borough} · BLOCK{" "}
+              {payload.block}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                marginTop: "18px",
+                fontFamily: CARD_TOKENS.num,
+                fontSize: "32px",
+                fontWeight: 700,
+                color: CARD_TOKENS.ink,
+              }}
+            >
+              $0 · no value geometry
+            </div>
+          </div>
         ) : null}
       </div>
 

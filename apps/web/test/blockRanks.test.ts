@@ -5,36 +5,36 @@ import {
   blockRankRowsSchema,
   chunkBlockRanks,
   filterBlockRanks,
-  rankBlockRows,
 } from "../lib/blockRanks.ts";
 
-const rows = rankBlockRows(
-  blockRankRowsSchema.parse([
-    {
-      b: 4,
-      k: 14260,
-      m: 300,
-      t: false,
-      a: "154 BROOKVILLE BLVD",
-      c: "whale",
-    },
-    {
-      b: 1,
-      k: 1171,
-      m: 200,
-      t: true,
-      a: "400 WEST 61ST STREET",
-      c: "spread",
-    },
-    {
-      b: 1,
-      k: 1294,
-      m: 100,
-      t: true,
-      c: "flat",
-    },
-  ]),
-);
+const rows = blockRankRowsSchema.parse([
+  {
+    b: 4,
+    k: 14260,
+    m: 300,
+    t: false,
+    a: "154 BROOKVILLE BLVD",
+    c: "whale",
+    rank: 1,
+  },
+  {
+    b: 1,
+    k: 1171,
+    m: 200,
+    t: true,
+    a: "400 WEST 61ST STREET",
+    c: "spread",
+    rank: 2,
+  },
+  {
+    b: 1,
+    k: 1294,
+    m: 100,
+    t: true,
+    c: "flat",
+    rank: 2,
+  },
+]);
 
 test("filters ranked rows by borough, block number, and address", () => {
   assert.deepEqual(
@@ -55,12 +55,12 @@ test("filters ranked rows by borough, block number, and address", () => {
 test("chunks without changing citywide rank numbers", () => {
   const manyRows = Array.from(
     { length: BLOCK_RANK_CHUNK_SIZE + 1 },
-    (_, index) => ({ ...rows[index % rows.length], rank: index + 1 }),
+    (_, index) => rows[index % rows.length],
   );
   const firstChunk = chunkBlockRanks(manyRows, BLOCK_RANK_CHUNK_SIZE);
 
   assert.equal(firstChunk.length, BLOCK_RANK_CHUNK_SIZE);
   assert.equal(firstChunk[0].rank, 1);
-  assert.equal(firstChunk.at(-1)?.rank, BLOCK_RANK_CHUNK_SIZE);
+  assert.equal(firstChunk.at(-1)?.rank, 2);
   assert.deepEqual(chunkBlockRanks(manyRows, -1), []);
 });

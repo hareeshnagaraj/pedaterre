@@ -7,9 +7,8 @@ import {
   blockRankRowsSchema,
   chunkBlockRanks,
   filterBlockRanks,
-  rankBlockRows,
   type BoroughRankFilter,
-  type RankedBlockRow,
+  type BlockRankRow,
 } from "@/lib/blockRanks";
 import { formatAssessedValue } from "@/lib/share/cardModel";
 
@@ -32,7 +31,7 @@ interface BlockRankListProps {
 type LoadState =
   | { state: "loading" }
   | { state: "error" }
-  | { state: "ready"; rows: RankedBlockRow[] };
+  | { state: "ready"; rows: BlockRankRow[] };
 
 export function BlockRankList({ expectedCount }: BlockRankListProps) {
   const [load, setLoad] = useState<LoadState>({ state: "loading" });
@@ -60,7 +59,7 @@ export function BlockRankList({ expectedCount }: BlockRankListProps) {
             `Block ranks has ${rows.length} rows; expected ${expectedCount}.`,
           );
         }
-        setLoad({ state: "ready", rows: rankBlockRows(rows) });
+        setLoad({ state: "ready", rows });
       })
       .catch(() => {
         if (!controller.signal.aborted) setLoad({ state: "error" });

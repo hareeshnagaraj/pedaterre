@@ -46,6 +46,12 @@ const CLAIMS: Claim[] = [
     source: "DOF roll",
   },
   {
+    claim: "$50M club rank",
+    definition:
+      "Dense rank of assessed market values, descending, across every raw tax lot above $50 million on the roll.",
+    source: "derived",
+  },
+  {
     claim: "City rank",
     definition:
       "Dense rank of block totals, descending, across every block on the roll.",

@@ -581,6 +581,19 @@ def dense_ranks(values: Iterable[Tuple[Tuple[int, int], int]]) -> Dict[Tuple[int
     return ranks
 
 
+def rank_records(records: Sequence[dict], value_field: str) -> List[dict]:
+    ranked: List[dict] = []
+    last_value: Optional[int] = None
+    rank = 0
+    for record in records:
+        value = record[value_field]
+        if last_value is None or value != last_value:
+            rank += 1
+            last_value = value
+        ranked.append({**record, "rank": rank})
+    return ranked
+
+
 def compute_ranks(
     blocks: Dict[Tuple[int, int], BlockStats]
 ) -> Tuple[Dict[Tuple[int, int], int], Dict[Tuple[int, int], int]]:
@@ -1313,6 +1326,7 @@ def build_tree(
                 "m": stats.total_mv,
                 "t": stats.taxable,
                 "c": built.payload["character"],
+                "rank": rank_all[key],
             }
             if built.address_hint:
                 rank_row["a"] = built.address_hint[:28]
@@ -1391,14 +1405,17 @@ def build_tree(
             },
         }
         block_ranks.sort(key=lambda item: (-item["m"], item["b"], item["k"]))
-        club_records = sorted(
-            scan.club_records,
-            key=lambda item: (
-                -item["mv"],
-                item["boro"],
-                item["block"],
-                item["lot"],
+        club_records = rank_records(
+            sorted(
+                scan.club_records,
+                key=lambda item: (
+                    -item["mv"],
+                    item["boro"],
+                    item["block"],
+                    item["lot"],
+                ),
             ),
+            "mv",
         )
         _write_json(staged / "index" / "block-map.json", block_map)
         _write_json(staged / "index" / "block-ranks.json", block_ranks)

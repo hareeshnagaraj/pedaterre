@@ -14,28 +14,24 @@ const clubLotRowSchema = z
     address: z.string(),
     bldgClass: z.string(),
     taxable: z.boolean(),
+    rank: z.number().int().positive(),
   })
   .strict();
 
 export const clubLotRowsSchema = z.array(clubLotRowSchema);
 
 export type ClubLotRow = z.infer<typeof clubLotRowSchema>;
-export type RankedClubLotRow = ClubLotRow & { rank: number };
 export interface ClubBlockScope {
   boro: 1 | 2 | 3 | 4 | 5;
   block: number;
 }
 
-export function rankClubLots(rows: ClubLotRow[]): RankedClubLotRow[] {
-  return rows.map((row, index) => ({ ...row, rank: index + 1 }));
-}
-
 export function filterClubLots(
-  rows: RankedClubLotRow[],
+  rows: ClubLotRow[],
   borough: BoroughRankFilter,
   query: string,
   blockScope: ClubBlockScope | null = null,
-): RankedClubLotRow[] {
+): ClubLotRow[] {
   const needle = query.trim().toLocaleLowerCase("en-US");
   return rows.filter(
     (row) =>
@@ -49,8 +45,8 @@ export function filterClubLots(
 }
 
 export function chunkClubLots(
-  rows: RankedClubLotRow[],
+  rows: ClubLotRow[],
   count: number,
-): RankedClubLotRow[] {
+): ClubLotRow[] {
   return rows.slice(0, Math.max(0, count));
 }
